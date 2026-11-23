@@ -6,7 +6,7 @@ import {
   CAMERA_HEIGHT, CAMERA_WIDTH, drawFigure, drawFlashlight, drawInterference, drawShell, figureScale, guard,
   guardLook, protagonistLook, pursuerLook, sceneProps, type Drawable, type Pose,
 } from "../../lib/reader/camera-scene";
-import { cueFor, mutters, staging, type ActorCue, type Walkable } from "../../lib/reader/camera-staging";
+import { cueFor, mutters, pokeLines, staging, type ActorCue, type Walkable } from "../../lib/reader/camera-staging";
 import { isMuted, onMutedChange, playFootstep, setMuted, speakLine } from "../../lib/reader/audio";
 
 type Speech = { text: string; shown: number; nextAt: number; holdUntil: number };
@@ -304,7 +304,13 @@ export function CameraFeed({ sceneId, eventIds = [], reply }: {
   const stroll = (event: PointerEvent<HTMLCanvasElement>) => {
     const { x, y } = toCameraPoint(event.currentTarget, event.clientX, event.clientY);
     const actor = qu.current;
-    if (!hitsActor(actor, x, y) || actor.detour?.length) return;
+    if (!hitsActor(actor, x, y)) return;
+    // Poking him also makes him say something: half reactions to being watched, half scene thoughts.
+    if (!speech.current) {
+      const pool = Math.random() < 0.5 ? pokeLines : (mutters[sceneId] ?? pokeLines);
+      speech.current = { text: pool[Math.floor(Math.random() * pool.length)], shown: 0, nextAt: performance.now(), holdUntil: 0 };
+    }
+    if (actor.detour?.length) return;
     const home: [number, number] = [actor.x, actor.y];
     const side = actor.x > CAMERA_WIDTH - 40 ? -1 : actor.x < 40 ? 1 : (Math.random() < 0.5 ? -1 : 1);
     const depth = actor.y > 150 ? -6 : 6;

@@ -182,6 +182,12 @@ export const mutters: Record<string, string[]> = {
   s06: ["快到出口了。", "值班的人会信我吗？", "证据还在，没丢。", "再坚持一下。"],
 };
 
+// What he says when the viewer clicks him, as if he could feel the camera watching.
+export const pokeLines = [
+  "谁？", "总觉得有人在看我。", "……别催我。", "我知道，我知道。", "嘘。", "你还在吗？",
+  "是监控吗？", "我没时间了。", "别跟着我。", "我听见了。",
+];
+
 // The latest cue for a scene: the most recent event with stage directions, or the scene opening.
 export function cueFor(sceneId: string, eventIds: readonly string[]): Cue | undefined {
   const scene = staging[sceneId];
