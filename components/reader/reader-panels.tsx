@@ -202,7 +202,7 @@ export function DanmakuPanel({ messages, character, input, complete, outgoing, t
       >
         {visible.length === 0 && !outgoing ? <p className="reader-empty">暂无弹幕。</p> : (
           <ol className="reader-chat">
-            {visible.map(entry => <DanmakuRecord key={entry.id} entry={entry} character={character} />)}
+            {toChatLines(visible).map(line => <ChatRecord key={line.id} line={line} character={character} />)}
             {outgoing && <li className="is-me is-sending"><div className="reader-meta">你 · 发送中</div><p>{outgoing}</p></li>}
             {thinking && <li className="is-them"><div className="reader-meta">{character ?? "角色"}</div><p className="reader-thinking">正在考虑你的话<span aria-hidden="true">…</span></p></li>}
           </ol>
@@ -220,36 +220,47 @@ export function DanmakuPanel({ messages, character, input, complete, outgoing, t
   );
 }
 
-function DanmakuRecord({ entry, character }: { entry: Entry; character?: string }) {
-  const time = <time dateTime={entry.timestamp}>{formatTime(entry.timestamp)}</time>;
-  if (entry.type === "danmaku_submitted") {
-    return <li className="is-me"><div className="reader-meta">你 · {time}</div><p>{entry.content.text}</p></li>;
-  }
-  if (entry.type !== "narrative_block") return null;
-  const block = entry.content;
-  if (block.kind === "decision") {
-    // The Timeline follows an inference decision with a separate inference block.
-    if (block.decision === "infer") return null;
-    return (
-      <li className="is-them">
-        <div className="reader-meta">
-          {character} · {time} <span className={`reader-verdict ${block.decision === "reject" ? "is-reject" : ""}`}>{decisions[block.decision]}</span>
-        </div>
-        <p>{block.reason}</p>
-      </li>
-    );
-  }
-  if (block.kind === "ai_inference" || block.kind === "system_event" || block.kind === "narration") {
-    if (block.kind === "system_event") {
-      return <li className="is-system"><p>{block.text}</p></li>;
+type Verdict = keyof typeof decisions;
+type ChatLine =
+  | { kind: "me"; id: number; time: string; text: string }
+  | { kind: "them"; id: number; time: string; text: string; verdicts: Verdict[] }
+  | { kind: "system"; id: number; text: string };
+
+// The chat shows only what the character says out loud. Decision reasons and inferences are
+// the character's private reasoning, so they are hidden; their verdict tags move onto the reply.
+function toChatLines(entries: Entry[]): ChatLine[] {
+  const lines: ChatLine[] = [];
+  let pending: Verdict[] = [];
+  for (const entry of entries) {
+    if (entry.type === "danmaku_submitted") {
+      lines.push({ kind: "me", id: entry.id, time: entry.timestamp, text: entry.content.text });
+      continue;
     }
-    const sender = block.kind === "ai_inference" ? `${character} · 推测` : character;
-    return (
-      <li className="is-them">
-        <div className="reader-meta">{sender} · {time}</div>
-        <p>{block.text}</p>
-      </li>
-    );
+    if (entry.type !== "narrative_block") continue;
+    const block = entry.content;
+    if (block.kind === "decision") pending.push(block.decision);
+    else if (block.kind === "system_event") lines.push({ kind: "system", id: entry.id, text: block.text });
+    else if (block.kind === "narration") {
+      lines.push({ kind: "them", id: entry.id, time: entry.timestamp, text: block.text, verdicts: pending });
+      pending = [];
+    }
   }
-  return null;
+  return lines;
+}
+
+function ChatRecord({ line, character }: { line: ChatLine; character?: string }) {
+  if (line.kind === "system") return <li className="is-system"><p>{line.text}</p></li>;
+  const time = <time dateTime={line.time}>{formatTime(line.time)}</time>;
+  if (line.kind === "me") return <li className="is-me"><div className="reader-meta">你 · {time}</div><p>{line.text}</p></li>;
+  return (
+    <li className="is-them">
+      <div className="reader-meta">
+        {character} · {time}
+        {line.verdicts.map((verdict, index) => (
+          <span key={index} className={`reader-verdict ${verdict === "reject" ? "is-reject" : ""}`}>{decisions[verdict]}</span>
+        ))}
+      </div>
+      <p>{line.text}</p>
+    </li>
+  );
 }
