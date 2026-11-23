@@ -3,6 +3,7 @@ import type { ReaderView } from "../../lib/reader/reader-session";
 import type { NarrativeBlock } from "../../lib/engine/narrative-block";
 import { formatTime, StudyFeed } from "./study-feed";
 import { SoundToggle } from "./camera-feed";
+import { playTypeKey } from "../../lib/reader/audio";
 
 // Right-hand control strip of the CRT: two dials, a power lamp, the sound button and a speaker grille.
 function TvPanel() {
@@ -25,8 +26,13 @@ const decisions = {
 };
 
 const followThreshold = 48;
-const typeCharsPerTick = 2;
-const typeTickMs = 45;
+// Typewriter rhythm: a short, uneven gap per key, longer rests after punctuation.
+function keyDelay(typed: string) {
+  if (/[。！？…]/.test(typed)) return 380;
+  if (/[，、；：]/.test(typed)) return 180;
+  if (typed === "\n") return 260;
+  return 50 + Math.random() * 35;
+}
 
 function isTurnReply(entry: Entry) {
   // The Timeline links scene openings to session start or scene transition.
@@ -116,8 +122,14 @@ export function ScenePanel({ scene, sceneId, eventIds, story, clues, status, onT
       const timer = window.setTimeout(() => { setShown(n => n + 1); setChars(0); }, currentLength > 0 ? 320 : 0);
       return () => window.clearTimeout(timer);
     }
-    const timer = window.setTimeout(() => setChars(n => n + typeCharsPerTick), typeTickMs);
+    const text = current?.kind === "text" ? current.text : "";
+    const timer = window.setTimeout(() => {
+      const next = text[chars];
+      if (next && next.trim()) playTypeKey();
+      setChars(n => n + 1);
+    }, chars === 0 ? 120 : keyDelay(text[chars - 1] ?? ""));
     return () => window.clearTimeout(timer);
+    // `current` is rebuilt each render; its identity is captured by `shown` and its length.
   }, [shown, currentLength, chars]);
 
   const { log, onScroll } = useFollow(`${shown}:${chars}:${lines.length}:${!!error}`);
@@ -125,9 +137,16 @@ export function ScenePanel({ scene, sceneId, eventIds, story, clues, status, onT
 
   const renderLine = (line: StoryLine, partial?: number) => {
     if (line.kind === "image") return <img key={line.id} src={line.src} alt={line.alt} />;
-    const text = partial === undefined ? line.text : line.text.slice(0, partial);
     const className = line.kind === "ending" ? "reader-ending" : line.clue ? "reader-clue-line" : undefined;
-    return <p key={line.id} className={className}>{text}{partial !== undefined && <span className="reader-caret" aria-hidden="true" />}</p>;
+    if (partial === undefined) return <p key={line.id} className={className}>{line.text}</p>;
+    // The newest character is struck onto the paper: it lands dark and settles, like fresh ink.
+    return (
+      <p key={line.id} className={className}>
+        {line.text.slice(0, Math.max(0, partial - 1))}
+        {partial > 0 && <span key={partial} className="reader-ink">{line.text[partial - 1]}</span>}
+        <span className="reader-caret" aria-hidden="true" />
+      </p>
+    );
   };
 
   return (

@@ -190,6 +190,33 @@ export function onMutedChange(listener: (muted: boolean) => void) {
   return () => { listeners.delete(listener); };
 }
 
+// One typewriter key strike: a bright click on top of a soft wooden thunk.
+export function playTypeKey() {
+  if (!context || !master || muted || context.state !== "running") return;
+  const ctx = context;
+  const when = ctx.currentTime;
+  const click = ctx.createBufferSource();
+  click.buffer = noiseBuffer(ctx, 0.03);
+  const clickFilter = ctx.createBiquadFilter();
+  clickFilter.type = "bandpass";
+  clickFilter.frequency.value = 2600 + Math.random() * 900;
+  clickFilter.Q.value = 2;
+  const clickGain = ctx.createGain();
+  clickGain.gain.setValueAtTime(0.09 + Math.random() * 0.04, when);
+  clickGain.gain.exponentialRampToValueAtTime(0.001, when + 0.03);
+  click.connect(clickFilter).connect(clickGain).connect(master);
+  click.start(when);
+  const thunk = ctx.createOscillator();
+  thunk.frequency.setValueAtTime(140, when);
+  thunk.frequency.exponentialRampToValueAtTime(70, when + 0.05);
+  const thunkGain = ctx.createGain();
+  thunkGain.gain.setValueAtTime(0.06, when);
+  thunkGain.gain.exponentialRampToValueAtTime(0.001, when + 0.06);
+  thunk.connect(thunkGain).connect(master);
+  thunk.start(when);
+  thunk.stop(when + 0.07);
+}
+
 // One footfall. `pan` is -1 (left) to 1 (right); `level` grows as the walker nears the camera.
 export function playFootstep({ pan, level, heavy }: { pan: number; level: number; heavy: boolean }) {
   if (!context || !master || muted || context.state !== "running") return;

@@ -370,3 +370,12 @@
   .reader-tv-knob.is-small, .reader-tv-plate { display: none; }
 }
 @media (prefers-reduced-motion: reduce) { .reader-tv-led { animation: none; } }
+
+/* Typewriter: each new character lands heavy and slightly offset, then settles into the line. */
+.reader-ink { display: inline-block; animation: ink-strike .28s ease-out; }
+@keyframes ink-strike {
+  0% { opacity: 0; transform: translateY(-2px) scale(1.15); filter: blur(.6px); color: #111827; }
+  40% { opacity: 1; color: #111827; }
+  100% { opacity: 1; transform: none; filter: none; }
+}
+@media (prefers-reduced-motion: reduce) { .reader-ink { animation: none; } }
