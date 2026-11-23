@@ -89,7 +89,8 @@ function useFollow(dependency: unknown) {
   return { log, onScroll };
 }
 
-export function ScenePanel({ scene, sceneId, eventIds, story, clues, status, onTypingChange, error }: {
+export function ScenePanel({ scene, sceneId, eventIds, reply, story, clues, status, onTypingChange, error }: {
+  reply?: { id: number; text: string };
   scene?: string;
   sceneId?: string;
   eventIds?: readonly string[];
@@ -158,7 +159,7 @@ export function ScenePanel({ scene, sceneId, eventIds, story, clues, status, onT
         </header>
         <div className="reader-tv-body">
           <div className="reader-tv-screen">
-            <StudyFeed sceneId={sceneId} scene={scene} eventIds={eventIds} />
+            <StudyFeed sceneId={sceneId} scene={scene} eventIds={eventIds} reply={reply} />
             <div className="reader-tv-glass" aria-hidden="true" />
           </div>
           <TvPanel />

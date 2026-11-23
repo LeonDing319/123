@@ -1,16 +1,17 @@
 import studyCamera from "../../design/reader-crt-study/study-camera.png";
 import { CameraFeed, useShiftClock } from "./camera-feed";
 
-export function StudyFeed({ scene, sceneId, eventIds }: {
+export function StudyFeed({ scene, sceneId, eventIds, reply }: {
   scene?: string;
   sceneId?: string;
   eventIds?: readonly string[];
+  reply?: { id: number; text: string };
 }) {
   const clock = useShiftClock();
   const live = sceneId && /^s0[1-6]$/.test(sceneId);
   return (
     <div className="reader-feed" id="reader-feed">
-      {live && <CameraFeed sceneId={sceneId} eventIds={eventIds} />}
+      {live && <CameraFeed sceneId={sceneId} eventIds={eventIds} reply={reply} />}
       {scene === "书房" && <img src={studyCamera.src} width={studyCamera.width} height={studyCamera.height} alt="书房示意图，旧门旁的桌面上摆着一张便签。" />}
       <div className="reader-crt" aria-hidden="true" />
       <div className="reader-feed-top reader-meta" aria-hidden="true">

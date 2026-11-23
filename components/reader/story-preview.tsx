@@ -111,6 +111,10 @@ export function StoryPreview({ onComplete }: { onComplete?: () => void }) {
   // When it is the player's turn, the hint types itself out like a message being written.
   const typedHint = useTypedHint(`现在告诉${character}你的想法`, `给${character}发一条弹幕`, channelOpen);
   const { story, messages, clues } = getReaderRecords(view);
+  // His latest spoken reply, so the camera can show him saying it.
+  const replyEntry = messages.findLast(entry => entry.type === "narrative_block" && entry.content.kind === "narration");
+  const reply = replyEntry?.type === "narrative_block" && replyEntry.content.kind === "narration"
+    ? { id: replyEntry.id, text: replyEntry.content.text } : undefined;
   return (
     <main className="reader" aria-label={view?.title ?? "叙事记录"}>
       <div className="reader-layout">
@@ -119,6 +123,7 @@ export function StoryPreview({ onComplete }: { onComplete?: () => void }) {
           scene={view?.scene}
           sceneId={view?.sceneId}
           eventIds={view?.eventIds}
+          reply={reply}
           story={story}
           clues={clues}
           status={status}

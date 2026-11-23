@@ -6,8 +6,16 @@ import {
   CAMERA_HEIGHT, CAMERA_WIDTH, drawFigure, drawFlashlight, drawInterference, drawShell, figureScale, guard,
   guardLook, protagonistLook, pursuerLook, sceneProps, type Drawable, type Pose,
 } from "../../lib/reader/camera-scene";
-import { cueFor, staging, type ActorCue, type Walkable } from "../../lib/reader/camera-staging";
+import { cueFor, mutters, staging, type ActorCue, type Walkable } from "../../lib/reader/camera-staging";
 import { isMuted, onMutedChange, playFootstep, setMuted } from "../../lib/reader/audio";
+
+type Speech = { text: string; shown: number; nextAt: number; holdUntil: number };
+
+// A reply is long; overhead he only says its first sentence.
+function firstSentence(text: string) {
+  const sentence = text.match(/^[^。！？!?]*[。！？!?]?/)?.[0] ?? text;
+  return sentence.length > 22 ? `${sentence.slice(0, 21)}…` : sentence;
+}
 
 type Actor = {
   x: number; y: number;
@@ -117,7 +125,23 @@ function hitsActor(actor: Actor, x: number, y: number) {
   return Math.abs(x - actor.x) <= 8 * scale && y <= actor.y + 3 && y >= actor.y - 36 * scale;
 }
 
-export function CameraFeed({ sceneId, eventIds = [] }: { sceneId: string; eventIds?: readonly string[] }) {
+export function CameraFeed({ sceneId, eventIds = [], reply }: {
+  sceneId: string;
+  eventIds?: readonly string[];
+  reply?: { id: number; text: string };
+}) {
+  const bubble = useRef<HTMLDivElement>(null);
+  const speech = useRef<Speech | null>(null);
+  const nextMutterAt = useRef(0);
+  const lastReply = useRef(reply?.id);
+
+  // When he answers the player, the reply also appears over his head.
+  useEffect(() => {
+    if (!reply || reply.id === lastReply.current) return;
+    lastReply.current = reply.id;
+    speech.current = { text: firstSentence(reply.text), shown: 0, nextAt: performance.now() + 300, holdUntil: 0 };
+  }, [reply]);
+
   const canvas = useRef<HTMLCanvasElement>(null);
   const room = useRef<{ scene: string; image: HTMLCanvasElement } | null>(null);
   const qu = useRef<Actor>(newActor());
@@ -169,6 +193,44 @@ export function CameraFeed({ sceneId, eventIds = [] }: { sceneId: string; eventI
       room.current = { scene: sceneId, image };
     }
     const props = sceneProps(sceneNumber);
+    nextMutterAt.current = performance.now() + 9000 + Math.random() * 12000;
+
+    // Speech bubble: types out character by character, lingers, then disappears.
+    const updateSpeech = (now: number) => {
+      const el = bubble.current;
+      const actor = qu.current;
+      const pool = mutters[sceneId];
+      if (!speech.current && pool && actor.visible && now > nextMutterAt.current
+          && canWander(actor.target, hei.current.visible)) {
+        speech.current = { text: pool[Math.floor(Math.random() * pool.length)], shown: 0, nextAt: now, holdUntil: 0 };
+      }
+      const line = speech.current;
+      if (!el) return;
+      if (!line || !actor.visible) { el.hidden = true; return; }
+      if (line.shown < line.text.length && now >= line.nextAt) {
+        const char = line.text[line.shown];
+        line.shown++;
+        line.nextAt = now + (/[，。！？…]/.test(char) ? 260 : 95);
+        if (line.shown === line.text.length) line.holdUntil = now + 3200;
+      }
+      if (line.holdUntil && now > line.holdUntil) {
+        speech.current = null;
+        nextMutterAt.current = now + 22000 + Math.random() * 20000;
+        el.hidden = true;
+        return;
+      }
+      el.hidden = false;
+      el.textContent = line.text.slice(0, line.shown);
+      // Place the bubble above his head, mapping camera pixels onto the scaled canvas.
+      const view = target;
+      const style = getComputedStyle(view);
+      const k = (style.objectFit === "cover" ? Math.max : Math.min)(view.clientWidth / CAMERA_WIDTH, view.clientHeight / CAMERA_HEIGHT);
+      const [px, py] = style.objectPosition.split(" ").map(v => v.endsWith("%") ? parseFloat(v) / 100 : 0.5);
+      const left = view.offsetLeft + (view.clientWidth - CAMERA_WIDTH * k) * px + actor.x * k;
+      const top = view.offsetTop + (view.clientHeight - CAMERA_HEIGHT * k) * py + (actor.y - 40 * figureScale(actor.y)) * k;
+      el.style.left = `${Math.min(view.offsetLeft + view.clientWidth - 70, Math.max(view.offsetLeft + 70, left))}px`;
+      el.style.top = `${Math.max(view.offsetTop + 30, top)}px`;
+    };
     const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
     let frame = 0;
     let last = performance.now();
@@ -224,6 +286,7 @@ export function CameraFeed({ sceneId, eventIds = [] }: { sceneId: string; eventI
           } });
         }
         layers.sort((a, b) => a.baseY - b.baseY).forEach(item => item.draw(ctx));
+        updateSpeech(now);
         if (!reduceMotion) drawInterference(ctx, now, Math.random);
       }
       frame = requestAnimationFrame(render);
@@ -247,8 +310,11 @@ export function CameraFeed({ sceneId, eventIds = [] }: { sceneId: string; eventI
     event.currentTarget.style.cursor = hitsActor(qu.current, x, y) ? "pointer" : "";
   };
 
-  return <canvas ref={canvas} className="camera-image" width={CAMERA_WIDTH} height={CAMERA_HEIGHT}
-    role="img" aria-label="研究中心监控实时画面" onPointerDown={stroll} onPointerMove={hover} />;
+  return <>
+    <canvas ref={canvas} className="camera-image" width={CAMERA_WIDTH} height={CAMERA_HEIGHT}
+      role="img" aria-label="研究中心监控实时画面" onPointerDown={stroll} onPointerMove={hover} />
+    <div ref={bubble} className="camera-bubble" role="status" aria-live="polite" hidden />
+  </>;
 }
 
 // Push button on the TV panel that mutes the score and footsteps.

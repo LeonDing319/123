@@ -379,3 +379,28 @@
   100% { opacity: 1; transform: none; filter: none; }
 }
 @media (prefers-reduced-motion: reduce) { .reader-ink { animation: none; } }
+
+/* Speech bubble above the paperclip on the security feed. */
+.camera-bubble {
+  position: absolute;
+  z-index: 2;
+  max-width: 60%;
+  padding: 3px 9px;
+  transform: translate(-50%, calc(-100% - 8px));
+  font: 14px/1.5 "LXGW WenKai", "Kaiti SC", KaiTi, serif;
+  color: #1c2318;
+  background: #dfe3c2;
+  border: 2px solid #1c2318;
+  box-shadow: 2px 2px 0 #0b100a;
+  white-space: nowrap;
+  pointer-events: none;
+}
+.camera-bubble::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -8px;
+  margin-left: -5px;
+  border: 5px solid transparent;
+  border-top: 6px solid #1c2318;
+}

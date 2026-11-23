@@ -171,6 +171,17 @@ export const staging: Record<string, SceneStaging> = {
   },
 };
 
+// Things he mutters to himself when nothing is happening.
+export const mutters: Record<string, string[]> = {
+  s00: ["就是这里了。", "灯怎么一直在闪……", "进去吧，别再犹豫了。"],
+  s01: ["原始记录一定还在。", "白针……", "这份报告不对劲。", "楼上有人吗？"],
+  s02: ["别出声……", "走廊太亮了。", "他会从哪边过来？"],
+  s03: ["日志应该就在这台终端里。", "快一点，再快一点。"],
+  s04: ["他到底想干什么……", "不能停在这里。"],
+  s05: ["这里比楼上冷多了。", "备份文件会放在哪？"],
+  s06: ["快到出口了。", "值班的人会信我吗？"],
+};
+
 // The latest cue for a scene: the most recent event with stage directions, or the scene opening.
 export function cueFor(sceneId: string, eventIds: readonly string[]): Cue | undefined {
   const scene = staging[sceneId];
