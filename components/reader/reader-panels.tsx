@@ -177,10 +177,10 @@ export function DanmakuPanel({ messages, character, input, complete, outgoing, t
         onScroll={onScroll}
       >
         {visible.length === 0 && !outgoing ? <p className="reader-empty">暂无弹幕。</p> : (
-          <ol className="reader-list">
+          <ol className="reader-chat">
             {visible.map(entry => <DanmakuRecord key={entry.id} entry={entry} character={character} />)}
-            {outgoing && <li className="reader-outgoing"><div className="reader-meta">发送中 · 你</div><p>{outgoing}</p></li>}
-            {thinking && <li><div className="reader-meta"><span className="reader-signal">{character ?? "角色"}</span></div><p className="reader-thinking">正在考虑你的话<span aria-hidden="true">…</span></p></li>}
+            {outgoing && <li className="is-me is-sending"><div className="reader-meta">你 · 发送中</div><p>{outgoing}</p></li>}
+            {thinking && <li className="is-them"><div className="reader-meta">{character ?? "角色"}</div><p className="reader-thinking">正在考虑你的话<span aria-hidden="true">…</span></p></li>}
           </ol>
         )}
       </div>
@@ -199,7 +199,7 @@ export function DanmakuPanel({ messages, character, input, complete, outgoing, t
 function DanmakuRecord({ entry, character }: { entry: Entry; character?: string }) {
   const time = <time dateTime={entry.timestamp}>{formatTime(entry.timestamp)}</time>;
   if (entry.type === "danmaku_submitted") {
-    return <li><div className="reader-meta">{time} · 你</div><p>{entry.content.text}</p></li>;
+    return <li className="is-me"><div className="reader-meta">你 · {time}</div><p>{entry.content.text}</p></li>;
   }
   if (entry.type !== "narrative_block") return null;
   const block = entry.content;
@@ -207,22 +207,22 @@ function DanmakuRecord({ entry, character }: { entry: Entry; character?: string 
     // The Timeline follows an inference decision with a separate inference block.
     if (block.decision === "infer") return null;
     return (
-      <li>
+      <li className="is-them">
         <div className="reader-meta">
-          {time} · {character} · <span className={`reader-verdict ${block.decision === "reject" ? "is-reject" : ""}`}>{decisions[block.decision]}</span>
+          {character} · {time} <span className={`reader-verdict ${block.decision === "reject" ? "is-reject" : ""}`}>{decisions[block.decision]}</span>
         </div>
         <p>{block.reason}</p>
       </li>
     );
   }
   if (block.kind === "ai_inference" || block.kind === "system_event" || block.kind === "narration") {
-    const sender = block.kind === "ai_inference" ? `${character} · AI 推测`
-      : block.kind === "narration" ? character : "系统反馈";
+    if (block.kind === "system_event") {
+      return <li className="is-system"><p>{block.text}</p></li>;
+    }
+    const sender = block.kind === "ai_inference" ? `${character} · 推测` : character;
     return (
-      <li>
-        <div className="reader-meta">
-          {time} · <span className="reader-signal">{sender}</span>
-        </div>
+      <li className="is-them">
+        <div className="reader-meta">{sender} · {time}</div>
         <p>{block.text}</p>
       </li>
     );
