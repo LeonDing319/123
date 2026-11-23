@@ -61,23 +61,24 @@ function startScore(ctx: AudioContext) {
   scoreStarted = true;
   const score = ctx.createGain();
   score.gain.value = 0;
-  score.gain.linearRampToValueAtTime(0.5, ctx.currentTime + 6); // fade in slowly
+  score.gain.linearRampToValueAtTime(0.9, ctx.currentTime + 3); // fade in
   score.connect(master);
 
   // Drone: two low, slightly detuned tones under a slowly breathing low-pass filter.
   const droneFilter = ctx.createBiquadFilter();
   droneFilter.type = "lowpass";
-  droneFilter.frequency.value = 260;
+  droneFilter.frequency.value = 700;
   const breath = ctx.createOscillator();
   const breathDepth = ctx.createGain();
   breath.frequency.value = 0.05;
-  breathDepth.gain.value = 120;
+  breathDepth.gain.value = 300;
   breath.connect(breathDepth).connect(droneFilter.frequency);
   breath.start();
   const droneGain = ctx.createGain();
-  droneGain.gain.value = 0.16;
+  droneGain.gain.value = 0.22;
   droneFilter.connect(droneGain).connect(score);
-  for (const [freq, type, detune] of [[55, "sawtooth", -7], [82.4, "triangle", 5], [110, "sine", 3]] as const) {
+  // Pitched high enough for laptop speakers: A2, E3 and A3 with a slight beat between them.
+  for (const [freq, type, detune] of [[110, "sawtooth", -7], [164.8, "triangle", 6], [220, "sawtooth", 4]] as const) {
     const osc = ctx.createOscillator();
     osc.type = type;
     osc.frequency.value = freq;
@@ -88,21 +89,21 @@ function startScore(ctx: AudioContext) {
 
   // Tape hiss and room tone.
   const hiss = ctx.createBufferSource();
-  hiss.buffer = noiseBuffer(ctx, 4, true);
+  hiss.buffer = noiseBuffer(ctx, 4);
   hiss.loop = true;
   const hissFilter = ctx.createBiquadFilter();
   hissFilter.type = "bandpass";
-  hissFilter.frequency.value = 900;
-  hissFilter.Q.value = 0.4;
+  hissFilter.frequency.value = 3000;
+  hissFilter.Q.value = 0.7;
   const hissGain = ctx.createGain();
-  hissGain.gain.value = 0.05;
+  hissGain.gain.value = 0.035;
   hiss.connect(hissFilter).connect(hissGain).connect(score);
   hiss.start();
 
   // Sparse piano-like notes from A minor with a flattened second, falling into the reverb.
   const notes = [220, 233.1, 261.6, 293.7, 329.6, 349.2, 440, 523.3];
   const pianoBus = ctx.createGain();
-  pianoBus.gain.value = 0.22;
+  pianoBus.gain.value = 0.45;
   pianoBus.connect(score);
   pianoBus.connect(reverb);
   const playNote = (when: number, freq: number, level: number) => {
@@ -136,9 +137,9 @@ function startScore(ctx: AudioContext) {
       if (Math.random() < 0.25) playNote(at + 0.04, freq * Math.SQRT2, 0.18);
       at += 0.6 + Math.random() * 1.2;
     }
-    window.setTimeout(phrase, 7000 + Math.random() * 9000);
+    window.setTimeout(phrase, 5000 + Math.random() * 6000);
   };
-  window.setTimeout(phrase, 4000);
+  window.setTimeout(phrase, 1500);
 
   // A distant, breath-like swell of filtered noise that comes and goes.
   const breathSource = ctx.createBufferSource();
@@ -167,13 +168,15 @@ function startScore(ctx: AudioContext) {
 export function initAudio() {
   if (typeof window === "undefined") return;
   muted = readMuted();
+  // Every click or key press wakes the audio again, in case the browser suspended it.
   const start = () => {
     const ctx = ensureContext();
     if (!ctx) return;
-    void ctx.resume();
+    if (ctx.state !== "running") void ctx.resume();
     startScore(ctx);
   };
-  window.addEventListener("pointerdown", start, { once: true });
+  window.addEventListener("pointerdown", start);
+  window.addEventListener("keydown", start);
 }
 
 export function isMuted() { return muted; }
@@ -182,12 +185,33 @@ export function setMuted(next: boolean) {
   muted = next;
   try { localStorage.setItem(MUTE_KEY, next ? "1" : "0"); } catch { /* storage unavailable */ }
   if (context && master) master.gain.setTargetAtTime(next ? 0 : 1, context.currentTime, 0.1);
+  if (next && "speechSynthesis" in window) window.speechSynthesis.cancel();
   listeners.forEach(listener => listener(next));
 }
 
 export function onMutedChange(listener: (muted: boolean) => void) {
   listeners.add(listener);
   return () => { listeners.delete(listener); };
+}
+
+// The paperclip's spoken voice: the system's Chinese speech, pitched down a little.
+const preferredVoices = ["Reed", "Eddy", "Rocko", "Li-Mu", "Yu-shu"];
+function chineseVoice() {
+  const voices = window.speechSynthesis.getVoices().filter(voice => /^zh[-_](CN|Hans)/i.test(voice.lang));
+  return preferredVoices.map(name => voices.find(voice => voice.name.startsWith(name))).find(Boolean) ?? voices[0];
+}
+
+export function speakLine(text: string) {
+  if (muted || typeof window === "undefined" || !("speechSynthesis" in window)) return;
+  const utterance = new SpeechSynthesisUtterance(text);
+  utterance.lang = "zh-CN";
+  const voice = chineseVoice();
+  if (voice) utterance.voice = voice;
+  utterance.rate = 0.92;
+  utterance.pitch = 0.7;
+  utterance.volume = 0.9;
+  window.speechSynthesis.cancel();
+  window.speechSynthesis.speak(utterance);
 }
 
 // One typewriter key strike: a bright click on top of a soft wooden thunk.
@@ -202,7 +226,7 @@ export function playTypeKey() {
   clickFilter.frequency.value = 2600 + Math.random() * 900;
   clickFilter.Q.value = 2;
   const clickGain = ctx.createGain();
-  clickGain.gain.setValueAtTime(0.09 + Math.random() * 0.04, when);
+  clickGain.gain.setValueAtTime(0.18 + Math.random() * 0.06, when);
   clickGain.gain.exponentialRampToValueAtTime(0.001, when + 0.03);
   click.connect(clickFilter).connect(clickGain).connect(master);
   click.start(when);
@@ -229,7 +253,7 @@ export function playFootstep({ pan, level, heavy }: { pan: number; level: number
   filter.frequency.value = (heavy ? 220 : 520) * (0.9 + Math.random() * 0.2);
   filter.Q.value = 1.2;
   const env = ctx.createGain();
-  const peak = Math.min(0.5, level) * (heavy ? 1.3 : 1);
+  const peak = Math.min(0.8, level * 2.2) * (heavy ? 1.3 : 1);
   env.gain.setValueAtTime(peak, when);
   env.gain.exponentialRampToValueAtTime(0.001, when + (heavy ? 0.16 : 0.09));
   const panner = ctx.createStereoPanner();

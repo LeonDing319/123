@@ -7,7 +7,7 @@ import {
   guardLook, protagonistLook, pursuerLook, sceneProps, type Drawable, type Pose,
 } from "../../lib/reader/camera-scene";
 import { cueFor, mutters, staging, type ActorCue, type Walkable } from "../../lib/reader/camera-staging";
-import { isMuted, onMutedChange, playFootstep, setMuted } from "../../lib/reader/audio";
+import { isMuted, onMutedChange, playFootstep, setMuted, speakLine } from "../../lib/reader/audio";
 
 type Speech = { text: string; shown: number; nextAt: number; holdUntil: number };
 
@@ -135,7 +135,7 @@ export function CameraFeed({ sceneId, eventIds = [], reply }: {
   const nextMutterAt = useRef(0);
   const lastReply = useRef(reply?.id);
 
-  // When he answers the player, the reply also appears over his head.
+  // When he answers the player, he says the reply out loud over his head.
   useEffect(() => {
     if (!reply || reply.id === lastReply.current) return;
     lastReply.current = reply.id;
@@ -195,7 +195,7 @@ export function CameraFeed({ sceneId, eventIds = [], reply }: {
     const props = sceneProps(sceneNumber);
     nextMutterAt.current = performance.now() + 9000 + Math.random() * 12000;
 
-    // Speech bubble: types out character by character, lingers, then disappears.
+    // Speech bubble: he says the line aloud while it types out, then it lingers and disappears.
     const updateSpeech = (now: number) => {
       const el = bubble.current;
       const actor = qu.current;
@@ -207,6 +207,7 @@ export function CameraFeed({ sceneId, eventIds = [], reply }: {
       const line = speech.current;
       if (!el) return;
       if (!line || !actor.visible) { el.hidden = true; return; }
+      if (line.shown === 0 && now >= line.nextAt) speakLine(line.text.replace(/…$/, ""));
       if (line.shown < line.text.length && now >= line.nextAt) {
         const char = line.text[line.shown];
         line.shown++;
