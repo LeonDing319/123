@@ -50,7 +50,7 @@ export function createNarrativeAgent(pack: StoryPack, registry: ProviderRegistry
   async function generate(system: string, context: object, signal?: AbortSignal) {
     signal?.throwIfAborted();
     const response = await registry.select(providerId, modelId).generate({
-      responseFormat: "json", maxOutputTokens: 2048,
+      responseFormat: "json", maxOutputTokens: 4096,
       messages: [
         { role: "system", content: system },
         { role: "user", content: JSON.stringify(context) },
