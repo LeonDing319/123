@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
 import type { ReaderView } from "../../lib/reader/reader-session";
-import { CluePanel, DanmakuPanel, getReaderRecords, ScenePanel } from "./reader-panels";
+import { DanmakuPanel, getReaderRecords, ScenePanel } from "./reader-panels";
 import "./reader.css";
 
 const readerStatus = {
@@ -120,6 +120,7 @@ export function StoryPreview({ onComplete }: { onComplete?: () => void }) {
           sceneId={view?.sceneId}
           eventIds={view?.eventIds}
           story={story}
+          clues={clues}
           status={status}
           channelOpen={channelOpen}
           thinking={thinking}
@@ -133,7 +134,7 @@ export function StoryPreview({ onComplete }: { onComplete?: () => void }) {
             </div>
           )}
         />
-        <aside className="reader-side" aria-label="弹幕与线索">
+        <aside className="reader-side" aria-label="弹幕">
           <DanmakuPanel
             key={view?.id}
             messages={messages}
@@ -157,7 +158,6 @@ export function StoryPreview({ onComplete }: { onComplete?: () => void }) {
               </form>
             }
           />
-          <CluePanel clues={clues} />
         </aside>
       </div>
     </main>

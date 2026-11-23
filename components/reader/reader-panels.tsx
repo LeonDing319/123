@@ -69,11 +69,12 @@ function useFollow(dependency: unknown) {
   return { log, onScroll };
 }
 
-export function ScenePanel({ scene, sceneId, eventIds, story, status, channelOpen, thinking, onTypingChange, error }: {
+export function ScenePanel({ scene, sceneId, eventIds, story, clues, status, channelOpen, thinking, onTypingChange, error }: {
   scene?: string;
   sceneId?: string;
   eventIds?: readonly string[];
   story: Entry[];
+  clues: Clue[];
   status: string;
   channelOpen: boolean;
   thinking: boolean;
@@ -84,6 +85,11 @@ export function ScenePanel({ scene, sceneId, eventIds, story, status, channelOpe
   // Lines before `shown` are complete; line `shown` is being typed up to `chars`.
   const [shown, setShown] = useState(0);
   const [chars, setChars] = useState(0);
+  const [tab, setTab] = useState<"story" | "clues">("story");
+  // A clue found while the clue tab is closed lights up its button until it is opened.
+  const [seenClues, setSeenClues] = useState(0);
+  useEffect(() => { if (tab === "clues") setSeenClues(clues.length); }, [tab, clues.length]);
+  const newClues = clues.length > seenClues;
   const typing = shown < lines.length;
   const current = lines[shown];
 
@@ -122,16 +128,34 @@ export function ScenePanel({ scene, sceneId, eventIds, story, status, channelOpe
         <StudyFeed sceneId={sceneId} scene={scene} eventIds={eventIds} channelOpen={channelOpen} thinking={thinking} />
         <div className="reader-device-foot" aria-hidden="true" />
       </div>
-      <article className="reader-paper reader-story" aria-label="剧情记录">
-        <h2 className="reader-paper-title">现场记录</h2>
-        <div ref={log} onScroll={onScroll} onClick={typing ? skip : undefined}
+      <article className="reader-paper reader-story" aria-label="现场记录与线索">
+        <div className="reader-tabs" role="tablist" aria-label="切换记录">
+          <button type="button" role="tab" id="tab-story" aria-selected={tab === "story"} aria-controls="panel-story"
+            onClick={() => setTab("story")}>现场记录</button>
+          <button type="button" role="tab" id="tab-clues" aria-selected={tab === "clues"} aria-controls="panel-clues"
+            className={newClues ? "has-new" : undefined} onClick={() => setTab("clues")}>
+            已发现线索<span className="reader-tab-count">{clues.length}</span>
+          </button>
+        </div>
+        {tab === "clues" && (clues.length === 0 ? <p id="panel-clues" role="tabpanel" aria-labelledby="tab-clues" className="reader-scroll reader-empty">暂无线索。</p> : (
+          <ol id="panel-clues" role="tabpanel" aria-labelledby="tab-clues" className="reader-list reader-scroll reader-clue-list" tabIndex={0}>
+            {clues.map((clue, index) => (
+              <li key={clue.clueId}>
+                <span className="reader-clue-no">线索 {String(index + 1).padStart(2, "0")}</span>
+                <p>{clue.text}</p>
+              </li>
+            ))}
+          </ol>
+        ))}
+        <div ref={log} onScroll={onScroll} onClick={typing ? skip : undefined} hidden={tab !== "story"}
+          id="panel-story" aria-labelledby="tab-story"
           className="reader-scroll reader-story-log" role="log" tabIndex={0} aria-label="曲别针的剧情"
           title={typing ? "点击显示全部" : undefined}>
           {lines.slice(0, shown).map(line => renderLine(line))}
           {current && current.kind === "text" && renderLine(current, chars)}
           {error}
         </div>
-        {(status || typing) && <footer className="reader-paper-footer">
+        {tab === "story" && (status || typing) && <footer className="reader-paper-footer">
           <span className="reader-status" role="status">{status}</span>
           {typing && <button type="button" className="reader-skip" onClick={skip}>显示全部</button>}
         </footer>}
@@ -228,25 +252,4 @@ function DanmakuRecord({ entry, character }: { entry: Entry; character?: string 
     );
   }
   return null;
-}
-
-export function CluePanel({ clues }: { clues: Clue[] }) {
-  return (
-    <section className="reader-paper reader-clues" aria-labelledby="reader-clues-title">
-      <header className="reader-paper-head">
-        <h2 id="reader-clues-title" className="reader-paper-title">已发现线索</h2>
-        <span className="reader-clue-count" aria-live="polite">{clues.length} 件</span>
-      </header>
-      {clues.length === 0 ? <p className="reader-empty">暂无线索。</p> : (
-        <ol className="reader-list reader-scroll reader-clue-list" aria-label="线索记录" tabIndex={0}>
-          {clues.map((clue, index) => (
-            <li key={clue.clueId}>
-              <span className="reader-clue-no">线索 {String(index + 1).padStart(2, "0")}</span>
-              <p>{clue.text}</p>
-            </li>
-          ))}
-        </ol>
-      )}
-    </section>
-  );
 }
