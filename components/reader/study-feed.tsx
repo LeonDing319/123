@@ -1,18 +1,28 @@
 import studyCamera from "../../design/reader-crt-study/study-camera.png";
+import { CameraFeed, useShiftClock } from "./camera-feed";
 
-export function CameraImage({ sceneId }: { sceneId: string }) {
-  return <img className="camera-image" src={`/cameras/${sceneId}.gif`} alt="研究中心监控影像" />;
-}
-
-export function StudyFeed({ scene, sceneId, timestamp }: { scene?: string; sceneId?: string; timestamp?: string }) {
+export function StudyFeed({ scene, sceneId, eventIds, channelOpen, thinking }: {
+  scene?: string;
+  sceneId?: string;
+  eventIds?: readonly string[];
+  channelOpen?: boolean;
+  thinking?: boolean;
+}) {
+  const clock = useShiftClock();
+  const live = sceneId && /^s0[1-6]$/.test(sceneId);
   return (
     <div className="reader-feed" id="reader-feed">
-      {sceneId && /^s0[1-6]$/.test(sceneId) && <CameraImage sceneId={sceneId} />}
+      {live && <CameraFeed sceneId={sceneId} eventIds={eventIds} />}
       {scene === "书房" && <img src={studyCamera.src} width={studyCamera.width} height={studyCamera.height} alt="书房示意图，旧门旁的桌面上摆着一张便签。" />}
       <div className="reader-crt" aria-hidden="true" />
+      <div className="reader-feed-top reader-meta" aria-hidden="true">
+        <span className="reader-rec">● REC</span>
+        {channelOpen && <span className="reader-feed-alert">弹幕通道已开放</span>}
+        {thinking && <span className="reader-feed-alert">曲别针正在考虑</span>}
+      </div>
       <div className="reader-feed-label reader-meta">
         <span>{scene === "书房" ? "场景示意" : sceneId ? "监控中" : "正在连接"}</span>
-        {timestamp && <time dateTime={timestamp}>{formatTime(timestamp)}</time>}
+        <time>{clock}</time>
       </div>
     </div>
   );

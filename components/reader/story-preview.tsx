@@ -7,7 +7,7 @@ import "./reader.css";
 
 const readerStatus = {
   advancing: "自主推进中",
-  waiting_for_player: "等待你的弹幕",
+  waiting_for_player: "轮到你了，给他发一条弹幕",
   no_action: "当前没有可推进的行动",
   completed: "故事已结束",
 };
@@ -22,6 +22,8 @@ export function StoryPreview({ onComplete }: { onComplete?: () => void }) {
   const [text, setText] = useState("");
   const [pending, setPending] = useState(false);
   const [failure, setFailure] = useState<{ command: Command; message: string; expired: boolean }>();
+  const [outgoing, setOutgoing] = useState<string>();
+  const [typing, setTyping] = useState(true);
   const started = useRef(false);
   const busy = useRef(false);
 
@@ -30,6 +32,7 @@ export function StoryPreview({ onComplete }: { onComplete?: () => void }) {
     busy.current = true;
     setPending(true);
     setFailure(undefined);
+    if (command.action === "danmaku") setOutgoing(command.text);
     let expired = false;
     try {
       const response = await fetch("/api/reader", {
@@ -54,6 +57,7 @@ export function StoryPreview({ onComplete }: { onComplete?: () => void }) {
     } finally {
       busy.current = false;
       setPending(false);
+      setOutgoing(undefined);
     }
   }, []);
 
@@ -64,18 +68,24 @@ export function StoryPreview({ onComplete }: { onComplete?: () => void }) {
   }, [send]);
 
   useEffect(() => {
-    if (!view || view.mode !== "advancing" || pending || failure) return;
+    if (!view || view.mode !== "advancing" || pending || failure || typing) return;
     const timer = window.setTimeout(() => {
       void send({ action: "step", id: view.id, revision: view.revision });
     }, 1400);
     return () => window.clearTimeout(timer);
-  }, [view, pending, failure, send]);
+  }, [view, pending, failure, typing, send]);
 
   useEffect(() => {
     if (view?.mode === "completed") onComplete?.();
   }, [view?.mode, onComplete]);
 
   const canSend = view && (view.mode === "advancing" || view.mode === "waiting_for_player") && !pending && !failure;
+  const thinking = !!outgoing;
+  const channelOpen = view?.mode === "waiting_for_player" && !pending && !failure;
+  const character = view?.character ?? "曲别针";
+  const status = thinking ? `${character}正在考虑你的弹幕…`
+    : view ? (view.mode === "waiting_for_player" ? `轮到你了，给${character}发一条弹幕` : readerStatus[view.mode])
+    : failure ? "会话启动失败" : "正在开启故事…";
 
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -91,9 +101,12 @@ export function StoryPreview({ onComplete }: { onComplete?: () => void }) {
           key={view?.id}
           scene={view?.scene}
           sceneId={view?.sceneId}
+          eventIds={view?.eventIds}
           story={story}
-          clues={clues}
-          status={view ? readerStatus[view.mode] : failure ? "会话启动失败" : "正在开启故事…"}
+          status={status}
+          channelOpen={channelOpen}
+          thinking={thinking}
+          onTypingChange={setTyping}
           error={failure && (
             <div className="mt-4">
               <p className="reader-fault" role="alert">{failure.message}</p>
@@ -109,15 +122,18 @@ export function StoryPreview({ onComplete }: { onComplete?: () => void }) {
             messages={messages}
             character={view?.character}
             complete={view?.mode === "completed"}
+            outgoing={outgoing}
+            thinking={thinking}
+            channelOpen={channelOpen}
             input={
-              <form className="reader-form" onSubmit={submit}>
+              <form className={`reader-form${channelOpen ? " is-open" : ""}`} onSubmit={submit}>
                 <input
                   aria-label="弹幕"
                   disabled={!view || view.mode === "completed" || view.mode === "no_action" || !!failure}
                   maxLength={500}
                   onChange={(event) => setText(event.target.value)}
                   readOnly={pending}
-                  placeholder="给曲别针发一条弹幕"
+                  placeholder={channelOpen ? `现在告诉${character}你的想法` : `给${character}发一条弹幕`}
                   value={text}
                 />
                 <button type="submit" disabled={!canSend || !text.trim()}>发送</button>

@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState, type PointerEvent } from "react";
 import { Monitor, Mail, Radio, LockKeyhole, X, FolderClosed, Paperclip } from "lucide-react";
 import { StoryPreview } from "./story-preview";
-import { CameraImage } from "./study-feed";
+import { CameraFeed, useShiftClock } from "./camera-feed";
 import "./desktop.css";
 
 type App = "inbox" | "files" | "system";
@@ -24,6 +24,7 @@ export function GameDesktop() {
   const [position, setPosition] = useState<{ x: number; y: number }>();
   const monitor = useRef<HTMLElement>(null);
   const drag = useRef<{ dx: number; dy: number } | null>(null);
+  const clock = useShiftClock(false);
 
   useEffect(() => {
     if (phase !== "frozen" && phase !== "fault") return;
@@ -69,7 +70,7 @@ export function GameDesktop() {
         <span><Radio size={16}/> 监控终端</span><span><LockKeyhole size={13}/> 系统锁定</span>
       </header>
       {playing ? <StoryPreview onComplete={finishStory}/> : <div className="intercept">
-        <CameraImage sceneId="s01"/><div className="cam-caption"><b>● REC</b>　CAM / 01</div>
+        <CameraFeed sceneId="s01"/><div className="cam-caption"><b>● REC</b>　CAM / 01</div>
         <div className="cam-location">一楼档案室</div></div>}
     </section>}
     {app && <section className="utility os-window" aria-label={apps.find(a=>a.id===app)?.title}>
@@ -85,6 +86,6 @@ export function GameDesktop() {
     </section>}
     <footer className="os-taskbar"><span><Monitor size={15}/> 工作站</span><div>
       {phase === "online" && <button onClick={()=>setApp("inbox")}><Mail size={15}/> {read ? "收件箱" : "1 封未读"}</button>}
-      <span>{phase === "frozen" ? "程序未响应" : phase === "fault" ? "信号中断" : "21:30"}</span></div></footer>
+      <span>{phase === "frozen" ? "程序未响应" : phase === "fault" ? "信号中断" : clock}</span></div></footer>
   </div>;
 }

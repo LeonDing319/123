@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import type { ReaderView } from "../../lib/reader/reader-session";
 import type { NarrativeBlock } from "../../lib/engine/narrative-block";
 import { formatTime, StudyFeed } from "./study-feed";
@@ -11,6 +11,8 @@ const decisions = {
 };
 
 const followThreshold = 48;
+const typeCharsPerTick = 2;
+const typeTickMs = 45;
 
 function isTurnReply(entry: Entry) {
   // The Timeline links scene openings to session start or scene transition.
@@ -34,83 +36,126 @@ export function getReaderRecords(view?: ReaderView) {
   return { clues, story, messages };
 }
 
-export function ScenePanel({ scene, sceneId, story, clues, status, error }: {
+type StoryLine =
+  | { id: number; kind: "text"; text: string; clue?: boolean }
+  | { id: number; kind: "ending"; text: string }
+  | { id: number; kind: "image"; src: string; alt: string };
+
+function toStoryLines(story: Entry[]): StoryLine[] {
+  return story.flatMap((entry): StoryLine[] => {
+    if (entry.type === "autonomous_action_executed") return [{ id: entry.id, kind: "text", text: entry.content.result }];
+    if (entry.type === "session_completed") return [{ id: entry.id, kind: "ending", text: `结局 · ${entry.content.title}` }];
+    if (entry.type !== "narrative_block") return [];
+    const block = entry.content;
+    if (block.kind === "visual") return [{ id: entry.id, kind: "image", src: block.src, alt: block.alt }];
+    if ("text" in block) return [{ id: entry.id, kind: "text", text: block.text, clue: block.kind === "clue" }];
+    return [];
+  });
+}
+
+// Keeps a scroll container pinned to its newest content unless the reader scrolled up.
+function useFollow(dependency: unknown) {
+  const log = useRef<HTMLDivElement>(null);
+  const following = useRef(true);
+  useLayoutEffect(() => {
+    const viewport = log.current;
+    if (viewport && following.current) viewport.scrollTop = viewport.scrollHeight;
+  }, [dependency]);
+  const onScroll = () => {
+    const viewport = log.current;
+    if (!viewport) return;
+    following.current = viewport.scrollHeight - viewport.scrollTop - viewport.clientHeight <= followThreshold;
+  };
+  return { log, onScroll };
+}
+
+export function ScenePanel({ scene, sceneId, eventIds, story, status, channelOpen, thinking, onTypingChange, error }: {
   scene?: string;
   sceneId?: string;
+  eventIds?: readonly string[];
   story: Entry[];
-  clues: Clue[];
   status: string;
+  channelOpen: boolean;
+  thinking: boolean;
+  onTypingChange: (typing: boolean) => void;
   error?: ReactNode;
 }) {
-  const [showClues, setShowClues] = useState(false);
+  const lines = toStoryLines(story);
+  // Lines before `shown` are complete; line `shown` is being typed up to `chars`.
+  const [shown, setShown] = useState(0);
+  const [chars, setChars] = useState(0);
+  const typing = shown < lines.length;
+  const current = lines[shown];
+
+  useEffect(() => {
+    onTypingChange(typing);
+  }, [typing, onTypingChange]);
+
+  const currentLength = current ? (current.kind === "text" ? current.text.length : -1) : undefined;
+  useEffect(() => {
+    if (currentLength === undefined) return;
+    if (chars >= currentLength) {
+      const timer = window.setTimeout(() => { setShown(n => n + 1); setChars(0); }, currentLength > 0 ? 320 : 0);
+      return () => window.clearTimeout(timer);
+    }
+    const timer = window.setTimeout(() => setChars(n => n + typeCharsPerTick), typeTickMs);
+    return () => window.clearTimeout(timer);
+  }, [shown, currentLength, chars]);
+
+  const { log, onScroll } = useFollow(`${shown}:${chars}:${lines.length}:${!!error}`);
+  const skip = () => { setShown(lines.length); setChars(0); };
+
+  const renderLine = (line: StoryLine, partial?: number) => {
+    if (line.kind === "image") return <img key={line.id} src={line.src} alt={line.alt} />;
+    const text = partial === undefined ? line.text : line.text.slice(0, partial);
+    const className = line.kind === "ending" ? "reader-ending" : line.clue ? "reader-clue-line" : undefined;
+    return <p key={line.id} className={className}>{text}{partial !== undefined && <span className="reader-caret" aria-hidden="true" />}</p>;
+  };
+
   return (
     <section className="reader-panel reader-scene-panel" aria-labelledby="reader-scene-title">
       <div className="reader-device reader-camera-device">
         <header className="reader-panel-head">
-          <h2 id="reader-scene-title">{scene ? `${scene}监视画面` : "场景监视画面"}</h2>
+          <h2 id="reader-scene-title">{scene ? `${scene}` : "场景监视画面"}</h2>
           <span className="reader-meta">CAM {sceneId?.match(/^s(\d+)$/)?.[1] ?? "01"}</span>
         </header>
-        <StudyFeed sceneId={sceneId} scene={scene} timestamp={story[0]?.timestamp} />
+        <StudyFeed sceneId={sceneId} scene={scene} eventIds={eventIds} channelOpen={channelOpen} thinking={thinking} />
         <div className="reader-device-foot" aria-hidden="true" />
       </div>
-      <article className="reader-story" aria-label="剧情记录">
+      <article className="reader-paper reader-story" aria-label="剧情记录">
         <h2 className="reader-paper-title">现场记录</h2>
-        <div className="reader-scroll reader-story-log" role="log" tabIndex={0} aria-label="曲别针的剧情">
-          {story.map(entry => {
-            if (entry.type === "autonomous_action_executed") return <p key={entry.id}>{entry.content.result}</p>;
-            if (entry.type === "session_completed") return <p className="reader-signal" key={entry.id}>结局 · {entry.content.title}</p>;
-            if (entry.type !== "narrative_block") return null;
-            const block = entry.content;
-            if (block.kind === "visual") return <img key={entry.id} src={block.src} alt={block.alt} />;
-            if ("text" in block) return <p key={entry.id}>{block.text}</p>;
-            return null;
-          })}
+        <div ref={log} onScroll={onScroll} onClick={typing ? skip : undefined}
+          className="reader-scroll reader-story-log" role="log" tabIndex={0} aria-label="曲别针的剧情"
+          title={typing ? "点击显示全部" : undefined}>
+          {lines.slice(0, shown).map(line => renderLine(line))}
+          {current && current.kind === "text" && renderLine(current, chars)}
           {error}
         </div>
-        <footer className="reader-scene-footer">
-          <div className="reader-scene-actions">
-            <span className="reader-meta reader-signal" role="status">{status}</span>
-            <button
-              type="button"
-              className="reader-clue-button"
-              aria-expanded={showClues}
-              aria-controls="reader-clue-note"
-              disabled={!clues.length}
-              onClick={() => setShowClues(open => !open)}
-            >
-              查看线索{clues.length > 0 && ` · ${clues.length} 件`}
-            </button>
-          </div>
-          <div id="reader-clue-note" className="reader-scroll reader-clue-note" role="region" aria-label="记录摘录" tabIndex={0} hidden={!showClues || !clues.length}>
-            <strong>记录摘录</strong>
-            {clues.map(clue => <p key={clue.clueId}>{clue.text}</p>)}
-          </div>
+        <footer className="reader-paper-footer">
+          <span className={`reader-status${channelOpen ? " is-open" : ""}`} role="status">{status}</span>
+          {typing && <button type="button" className="reader-skip" onClick={skip}>显示全部</button>}
         </footer>
       </article>
     </section>
   );
 }
 
-export function DanmakuPanel({ messages, character, input, complete }: {
+export function DanmakuPanel({ messages, character, input, complete, outgoing, thinking, channelOpen }: {
   messages: Entry[];
   character?: string;
   input: ReactNode;
   complete: boolean;
+  outgoing?: string;
+  thinking: boolean;
+  channelOpen: boolean;
 }) {
   const [pauseAt, setPauseAt] = useState<number | null>(null);
   const paused = pauseAt !== null;
   const visible = paused ? messages.filter(entry => entry.sequence <= pauseAt) : messages;
-  const log = useRef<HTMLDivElement>(null);
-  const followLatest = useRef(true);
-  const latestSequence = visible.at(-1)?.sequence;
-
-  useLayoutEffect(() => {
-    const viewport = log.current;
-    if (viewport && followLatest.current) viewport.scrollTop = viewport.scrollHeight;
-  }, [latestSequence]);
+  const { log, onScroll } = useFollow(`${visible.at(-1)?.sequence}:${outgoing}:${thinking}`);
 
   return (
-    <section className="reader-panel reader-device reader-terminal" aria-labelledby="reader-danmaku-title">
+    <section className={`reader-panel reader-device reader-terminal${channelOpen ? " is-open" : ""}`} aria-labelledby="reader-danmaku-title">
       <header className="reader-panel-head">
         <h2 id="reader-danmaku-title">弹幕记录</h2>
         <button
@@ -129,14 +174,13 @@ export function DanmakuPanel({ messages, character, input, complete }: {
         role="log"
         aria-label="实时弹幕"
         tabIndex={0}
-        onScroll={({ currentTarget }) => {
-          const { scrollHeight, scrollTop, clientHeight } = currentTarget;
-          followLatest.current = scrollHeight - scrollTop - clientHeight <= followThreshold;
-        }}
+        onScroll={onScroll}
       >
-        {visible.length === 0 ? <p className="reader-empty">暂无弹幕。</p> : (
+        {visible.length === 0 && !outgoing ? <p className="reader-empty">暂无弹幕。</p> : (
           <ol className="reader-list">
             {visible.map(entry => <DanmakuRecord key={entry.id} entry={entry} character={character} />)}
+            {outgoing && <li className="reader-outgoing"><div className="reader-meta">发送中 · 你</div><p>{outgoing}</p></li>}
+            {thinking && <li><div className="reader-meta"><span className="reader-signal">{character ?? "角色"}</span></div><p className="reader-thinking">正在考虑你的话<span aria-hidden="true">…</span></p></li>}
           </ol>
         )}
       </div>
@@ -144,7 +188,7 @@ export function DanmakuPanel({ messages, character, input, complete }: {
         {input}
         <div className="reader-bar">
           <span className="reader-meta reader-signal" role="status">
-            {paused ? "显示已暂停" : complete ? "接收结束" : "接收中"}
+            {paused ? "显示已暂停" : complete ? "接收结束" : channelOpen ? "通道开放，等待你的弹幕" : "接收中"}
           </span>
         </div>
       </footer>
@@ -165,7 +209,7 @@ function DanmakuRecord({ entry, character }: { entry: Entry; character?: string 
     return (
       <li>
         <div className="reader-meta">
-          {time} · {character} · <span className={block.decision === "reject" ? "reader-fault" : "reader-signal"}>{decisions[block.decision]}</span>
+          {time} · {character} · <span className={`reader-verdict ${block.decision === "reject" ? "is-reject" : ""}`}>{decisions[block.decision]}</span>
         </div>
         <p>{block.reason}</p>
       </li>
@@ -188,16 +232,16 @@ function DanmakuRecord({ entry, character }: { entry: Entry; character?: string 
 
 export function CluePanel({ clues }: { clues: Clue[] }) {
   return (
-    <section className="reader-panel" aria-labelledby="reader-clues-title">
-      <header className="reader-panel-head">
-        <h2 id="reader-clues-title">已发现线索</h2>
-        <span className="reader-meta reader-evidence" aria-live="polite">{clues.length} 件</span>
+    <section className="reader-paper reader-clues" aria-labelledby="reader-clues-title">
+      <header className="reader-paper-head">
+        <h2 id="reader-clues-title" className="reader-paper-title">已发现线索</h2>
+        <span className="reader-clue-count" aria-live="polite">{clues.length} 件</span>
       </header>
       {clues.length === 0 ? <p className="reader-empty">暂无线索。</p> : (
         <ol className="reader-list reader-scroll reader-clue-list" aria-label="线索记录" tabIndex={0}>
           {clues.map((clue, index) => (
             <li key={clue.clueId}>
-              <span className="reader-meta reader-evidence">线索 {String(index + 1).padStart(2, "0")}</span>
+              <span className="reader-clue-no">线索 {String(index + 1).padStart(2, "0")}</span>
               <p>{clue.text}</p>
             </li>
           ))}

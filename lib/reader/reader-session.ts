@@ -132,6 +132,10 @@ export function readerView(id: string, session: ReaderSession) {
     entry.type === "narrative_block" || entry.type === "danmaku_submitted" ||
     entry.type === "autonomous_action_executed" || entry.type === "session_completed",
   );
+  // Story events in the order they happened, so the camera can stage the characters.
+  const eventIds = timeline.flatMap(entry =>
+    entry.type === "autonomous_action_executed" ? [entry.content.actionId]
+      : entry.type === "intervention_triggered" ? [entry.content.storyEventId] : []);
   return {
     id,
     title: session.title,
@@ -141,6 +145,7 @@ export function readerView(id: string, session: ReaderSession) {
     revision: timeline.at(-1)?.sequence ?? 0,
     mode,
     entries,
+    eventIds,
   };
 }
 
