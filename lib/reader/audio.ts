@@ -1,0 +1,217 @@
+// All sound is synthesised in the browser: a dark ambient score and positional footsteps.
+// Browsers only allow audio after a click, so the context starts on the first pointer press.
+
+let context: AudioContext | null = null;
+let master: GainNode | null = null;
+let reverb: ConvolverNode | null = null;
+let muted = false;
+let scoreStarted = false;
+const listeners = new Set<(muted: boolean) => void>();
+
+const MUTE_KEY = "reader-sound-muted";
+
+function readMuted() {
+  try { return localStorage.getItem(MUTE_KEY) === "1"; } catch { return false; }
+}
+
+// A long, dark tail built from decaying noise; it gives every note the feel of an empty building.
+function makeReverb(ctx: AudioContext, seconds = 4.5) {
+  const length = Math.floor(ctx.sampleRate * seconds);
+  const impulse = ctx.createBuffer(2, length, ctx.sampleRate);
+  for (let channel = 0; channel < 2; channel++) {
+    const data = impulse.getChannelData(channel);
+    for (let i = 0; i < length; i++) data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / length, 3);
+  }
+  const node = ctx.createConvolver();
+  node.buffer = impulse;
+  return node;
+}
+
+function noiseBuffer(ctx: AudioContext, seconds: number, brown = false) {
+  const buffer = ctx.createBuffer(1, Math.floor(ctx.sampleRate * seconds), ctx.sampleRate);
+  const data = buffer.getChannelData(0);
+  let last = 0;
+  for (let i = 0; i < data.length; i++) {
+    const white = Math.random() * 2 - 1;
+    last = brown ? (last + 0.02 * white) / 1.02 : white;
+    data[i] = brown ? last * 3.5 : white;
+  }
+  return buffer;
+}
+
+function ensureContext() {
+  if (context) return context;
+  const Ctor = window.AudioContext ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+  if (!Ctor) return null;
+  context = new Ctor();
+  master = context.createGain();
+  master.gain.value = muted ? 0 : 1;
+  master.connect(context.destination);
+  reverb = makeReverb(context);
+  const wet = context.createGain();
+  wet.gain.value = 0.55;
+  reverb.connect(wet).connect(master);
+  return context;
+}
+
+// ---- Score ---------------------------------------------------------------------------------
+
+function startScore(ctx: AudioContext) {
+  if (scoreStarted || !master || !reverb) return;
+  scoreStarted = true;
+  const score = ctx.createGain();
+  score.gain.value = 0;
+  score.gain.linearRampToValueAtTime(0.5, ctx.currentTime + 6); // fade in slowly
+  score.connect(master);
+
+  // Drone: two low, slightly detuned tones under a slowly breathing low-pass filter.
+  const droneFilter = ctx.createBiquadFilter();
+  droneFilter.type = "lowpass";
+  droneFilter.frequency.value = 260;
+  const breath = ctx.createOscillator();
+  const breathDepth = ctx.createGain();
+  breath.frequency.value = 0.05;
+  breathDepth.gain.value = 120;
+  breath.connect(breathDepth).connect(droneFilter.frequency);
+  breath.start();
+  const droneGain = ctx.createGain();
+  droneGain.gain.value = 0.16;
+  droneFilter.connect(droneGain).connect(score);
+  for (const [freq, type, detune] of [[55, "sawtooth", -7], [82.4, "triangle", 5], [110, "sine", 3]] as const) {
+    const osc = ctx.createOscillator();
+    osc.type = type;
+    osc.frequency.value = freq;
+    osc.detune.value = detune;
+    osc.connect(droneFilter);
+    osc.start();
+  }
+
+  // Tape hiss and room tone.
+  const hiss = ctx.createBufferSource();
+  hiss.buffer = noiseBuffer(ctx, 4, true);
+  hiss.loop = true;
+  const hissFilter = ctx.createBiquadFilter();
+  hissFilter.type = "bandpass";
+  hissFilter.frequency.value = 900;
+  hissFilter.Q.value = 0.4;
+  const hissGain = ctx.createGain();
+  hissGain.gain.value = 0.05;
+  hiss.connect(hissFilter).connect(hissGain).connect(score);
+  hiss.start();
+
+  // Sparse piano-like notes from A minor with a flattened second, falling into the reverb.
+  const notes = [220, 233.1, 261.6, 293.7, 329.6, 349.2, 440, 523.3];
+  const pianoBus = ctx.createGain();
+  pianoBus.gain.value = 0.22;
+  pianoBus.connect(score);
+  pianoBus.connect(reverb);
+  const playNote = (when: number, freq: number, level: number) => {
+    const env = ctx.createGain();
+    env.gain.setValueAtTime(0, when);
+    env.gain.linearRampToValueAtTime(level, when + 0.01);
+    env.gain.exponentialRampToValueAtTime(0.0008, when + 3.8);
+    env.connect(pianoBus);
+    // Uncanny touch: each note slowly drifts off pitch, like a warped tape.
+    const drift = (Math.random() - 0.5) * 70;
+    for (const [ratio, amp] of [[1, 1], [2, 0.35], [3, 0.12]]) {
+      const osc = ctx.createOscillator();
+      const partial = ctx.createGain();
+      osc.frequency.value = freq * ratio;
+      osc.detune.setValueAtTime(0, when);
+      osc.detune.linearRampToValueAtTime(drift, when + 3.5);
+      partial.gain.value = amp;
+      osc.connect(partial).connect(env);
+      osc.start(when);
+      osc.stop(when + 4);
+    }
+  };
+  const phrase = () => {
+    const now = ctx.currentTime + 0.1;
+    const count = 1 + Math.floor(Math.random() * 3);
+    let at = now;
+    for (let i = 0; i < count; i++) {
+      const freq = notes[Math.floor(Math.random() * notes.length)];
+      playNote(at, freq, 0.5 + Math.random() * 0.4);
+      // Now and then a quiet tritone sounds against it, just wrong enough to unsettle.
+      if (Math.random() < 0.25) playNote(at + 0.04, freq * Math.SQRT2, 0.18);
+      at += 0.6 + Math.random() * 1.2;
+    }
+    window.setTimeout(phrase, 7000 + Math.random() * 9000);
+  };
+  window.setTimeout(phrase, 4000);
+
+  // A distant, breath-like swell of filtered noise that comes and goes.
+  const breathSource = ctx.createBufferSource();
+  breathSource.buffer = noiseBuffer(ctx, 3);
+  breathSource.loop = true;
+  const breathFilter = ctx.createBiquadFilter();
+  breathFilter.type = "bandpass";
+  breathFilter.frequency.value = 2400;
+  breathFilter.Q.value = 6;
+  const breathGain = ctx.createGain();
+  breathGain.gain.value = 0;
+  breathSource.connect(breathFilter).connect(breathGain).connect(reverb);
+  breathSource.start();
+  const sigh = () => {
+    const t = ctx.currentTime;
+    breathFilter.frequency.setValueAtTime(1800 + Math.random() * 1600, t);
+    breathGain.gain.setTargetAtTime(0.05, t, 1.2);
+    breathGain.gain.setTargetAtTime(0, t + 2.5, 1.5);
+    window.setTimeout(sigh, 18000 + Math.random() * 16000);
+  };
+  window.setTimeout(sigh, 12000);
+}
+
+// ---- Public API ----------------------------------------------------------------------------
+
+export function initAudio() {
+  if (typeof window === "undefined") return;
+  muted = readMuted();
+  const start = () => {
+    const ctx = ensureContext();
+    if (!ctx) return;
+    void ctx.resume();
+    startScore(ctx);
+  };
+  window.addEventListener("pointerdown", start, { once: true });
+}
+
+export function isMuted() { return muted; }
+
+export function setMuted(next: boolean) {
+  muted = next;
+  try { localStorage.setItem(MUTE_KEY, next ? "1" : "0"); } catch { /* storage unavailable */ }
+  if (context && master) master.gain.setTargetAtTime(next ? 0 : 1, context.currentTime, 0.1);
+  listeners.forEach(listener => listener(next));
+}
+
+export function onMutedChange(listener: (muted: boolean) => void) {
+  listeners.add(listener);
+  return () => { listeners.delete(listener); };
+}
+
+// One footfall. `pan` is -1 (left) to 1 (right); `level` grows as the walker nears the camera.
+export function playFootstep({ pan, level, heavy }: { pan: number; level: number; heavy: boolean }) {
+  if (!context || !master || muted || context.state !== "running") return;
+  const ctx = context;
+  const when = ctx.currentTime;
+  const source = ctx.createBufferSource();
+  source.buffer = noiseBuffer(ctx, 0.09);
+  const filter = ctx.createBiquadFilter();
+  filter.type = "bandpass";
+  filter.frequency.value = (heavy ? 220 : 520) * (0.9 + Math.random() * 0.2);
+  filter.Q.value = 1.2;
+  const env = ctx.createGain();
+  const peak = Math.min(0.5, level) * (heavy ? 1.3 : 1);
+  env.gain.setValueAtTime(peak, when);
+  env.gain.exponentialRampToValueAtTime(0.001, when + (heavy ? 0.16 : 0.09));
+  const panner = ctx.createStereoPanner();
+  panner.pan.value = Math.max(-1, Math.min(1, pan));
+  source.connect(filter).connect(env).connect(panner).connect(master);
+  if (reverb) {
+    const send = ctx.createGain();
+    send.gain.value = 0.15;
+    panner.connect(send).connect(reverb);
+  }
+  source.start(when);
+}

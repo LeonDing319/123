@@ -1,12 +1,10 @@
 import studyCamera from "../../design/reader-crt-study/study-camera.png";
 import { CameraFeed, useShiftClock } from "./camera-feed";
 
-export function StudyFeed({ scene, sceneId, eventIds, channelOpen, thinking }: {
+export function StudyFeed({ scene, sceneId, eventIds }: {
   scene?: string;
   sceneId?: string;
   eventIds?: readonly string[];
-  channelOpen?: boolean;
-  thinking?: boolean;
 }) {
   const clock = useShiftClock();
   const live = sceneId && /^s0[1-6]$/.test(sceneId);
@@ -17,8 +15,6 @@ export function StudyFeed({ scene, sceneId, eventIds, channelOpen, thinking }: {
       <div className="reader-crt" aria-hidden="true" />
       <div className="reader-feed-top reader-meta" aria-hidden="true">
         <span className="reader-rec">● REC</span>
-        {channelOpen && <span className="reader-feed-alert">弹幕通道已开放</span>}
-        {thinking && <span className="reader-feed-alert">曲别针正在考虑</span>}
       </div>
       <div className="reader-feed-label reader-meta">
         <span>{scene === "书房" ? "场景示意" : sceneId ? "监控中" : "正在连接"}</span>

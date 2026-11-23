@@ -284,3 +284,89 @@
   .reader-panel-head { gap: 4px; }
   .reader button, .reader input { padding-inline: 6px; }
 }
+
+/* ---- CRT television around the security feed ---- */
+.reader-tv {
+  padding: 8px 12px 6px;
+  border-radius: 16px 16px 12px 12px;
+  background:
+    repeating-linear-gradient(90deg, #ffffff05 0 1px, transparent 1px 3px),
+    linear-gradient(160deg, #6d6b51 0%, #504f39 38%, #393a29 100%);
+}
+.reader-tv-body { flex: 1; min-height: 0; display: flex; gap: 10px; }
+.reader-tv-screen {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  padding: 9px;
+  border-radius: 22px / 26px;
+  background: radial-gradient(ellipse at 50% 40%, #1d2419, #0b0f0a 75%);
+  box-shadow: inset 0 3px 6px #000c, inset 0 -2px 2px #ffffff14, 0 1px #8c8a6b80;
+}
+.reader-tv-screen .reader-feed {
+  flex: 1;
+  border: 0;
+  border-radius: 26px / 32px;
+  box-shadow: 0 0 0 2px #050705;
+}
+/* The curved glass: deep corner shading plus a soft reflection across the top left. */
+.reader-tv-glass {
+  position: absolute;
+  inset: 9px;
+  border-radius: 26px / 32px;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 70% 45% at 30% 12%, #ffffff1c, transparent 70%),
+    linear-gradient(118deg, transparent 62%, #ffffff0c 64%, transparent 70%);
+  box-shadow: inset 0 0 38px 10px #000000b0, inset 0 0 4px 2px #000;
+}
+.reader-tv-screen .reader-crt::before { background: radial-gradient(ellipse at center, transparent 55%, #020402b0 100%); }
+.reader-tv-panel {
+  flex: none;
+  width: 54px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 0 6px;
+  border-radius: 8px;
+  background: linear-gradient(180deg, #3f3f2c, #2f3022);
+  box-shadow: inset 0 1px #8c8a6b55, inset 0 -2px 3px #0008;
+}
+.reader-tv-knob {
+  position: relative;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background:
+    repeating-conic-gradient(#00000030 0 6deg, transparent 6deg 12deg),
+    radial-gradient(circle at 35% 30%, #a4a07c, #5a5840 60%, #2c2c1f);
+  box-shadow: 0 2px 3px #000a, inset 0 0 0 2px #26261b;
+}
+.reader-tv-knob::after { content: ""; position: absolute; left: 50%; top: 4px; width: 2px; height: 10px; margin-left: -1px; background: #e8e1bd; transform-origin: 50% 13px; transform: rotate(-35deg); }
+.reader-tv-knob.is-small { width: 24px; height: 24px; }
+.reader-tv-knob.is-small::after { top: 3px; height: 7px; transform-origin: 50% 9px; transform: rotate(50deg); }
+.reader-tv-led { width: 7px; height: 7px; border-radius: 50%; background: #b8f06c; box-shadow: 0 0 6px 2px #b8f06c88; animation: rec-blink 4s steps(1) infinite; }
+.reader .reader-tv-button {
+  min-height: 0;
+  width: 32px;
+  height: 22px;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  color: #e8e1bd;
+  background: linear-gradient(180deg, #5c5b43, #3a3a29);
+  border: 1px solid #1e1f16;
+  border-radius: 4px;
+  box-shadow: 0 2px #15160f, inset 0 1px #9b987566;
+}
+.reader .reader-tv-button[aria-pressed="false"] { color: #8e8a6c; transform: translateY(1px); box-shadow: 0 1px #15160f, inset 0 1px 2px #000a; }
+.reader-tv-grille { flex: 1; width: 30px; min-height: 20px; border-radius: 4px; background: repeating-linear-gradient(180deg, #141510 0 2px, #4a4a35 2px 5px); box-shadow: inset 0 1px 2px #000; }
+.reader-tv-plate { flex: none; align-self: center; margin-top: 5px; padding: 1px 10px; font: 10px/1.4 var(--mono); letter-spacing: .3em; color: #cfc8a0; background: #2a2b1f; border-radius: 3px; box-shadow: inset 0 1px 1px #000; }
+@media (max-height: 600px), (max-width: 600px) {
+  .reader-tv-panel { width: 40px; gap: 6px; }
+  .reader-tv-knob { width: 24px; height: 24px; }
+  .reader-tv-knob.is-small, .reader-tv-plate { display: none; }
+}
+@media (prefers-reduced-motion: reduce) { .reader-tv-led { animation: none; } }

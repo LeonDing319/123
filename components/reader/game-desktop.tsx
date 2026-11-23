@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState, type PointerEvent } from "rea
 import { Monitor, Mail, Radio, LockKeyhole, X, FolderClosed, Paperclip } from "lucide-react";
 import { StoryPreview } from "./story-preview";
 import { CameraFeed, useShiftClock } from "./camera-feed";
+import { initAudio } from "../../lib/reader/audio";
 import "./desktop.css";
 
 type App = "inbox" | "files" | "system";
@@ -31,6 +32,9 @@ export function GameDesktop() {
     const timer = setTimeout(() => setPhase(phase === "frozen" ? "fault" : "online"), phase === "frozen" ? 780 : 640);
     return () => clearTimeout(timer);
   }, [phase]);
+
+  // Sound starts with the first click anywhere, as browsers require.
+  useEffect(() => { initAudio(); }, []);
 
   useEffect(() => {
     const reset = () => setPosition(undefined);
@@ -70,8 +74,8 @@ export function GameDesktop() {
         <span><Radio size={16}/> 监控终端</span><span><LockKeyhole size={13}/> 系统锁定</span>
       </header>
       {playing ? <StoryPreview onComplete={finishStory}/> : <div className="intercept">
-        <CameraFeed sceneId="s01"/><div className="cam-caption"><b>● REC</b>　CAM / 01</div>
-        <div className="cam-location">一楼档案室</div></div>}
+        <CameraFeed sceneId="s00"/><div className="cam-caption"><b>● REC</b>　CAM / 00</div>
+        <div className="cam-location">研究中心正门</div></div>}
     </section>}
     {app && <section className="utility os-window" aria-label={apps.find(a=>a.id===app)?.title}>
       <header className="window-bar"><span>{apps.find(a=>a.id===app)?.title}</span><button aria-label="关闭窗口" onClick={()=>setApp(undefined)}><X size={16}/></button></header>

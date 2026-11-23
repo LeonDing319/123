@@ -1,11 +1,13 @@
 "use client";
 
 import { useEffect, useRef, useState, type PointerEvent } from "react";
+import { Volume2, VolumeX } from "lucide-react";
 import {
   CAMERA_HEIGHT, CAMERA_WIDTH, drawFigure, drawFlashlight, drawInterference, drawShell, figureScale, guard,
   guardLook, protagonistLook, pursuerLook, sceneProps, type Drawable, type Pose,
 } from "../../lib/reader/camera-scene";
-import { cueFor, staging, type ActorCue } from "../../lib/reader/camera-staging";
+import { cueFor, staging, type ActorCue, type Walkable } from "../../lib/reader/camera-staging";
+import { isMuted, onMutedChange, playFootstep, setMuted } from "../../lib/reader/audio";
 
 type Actor = {
   x: number; y: number;
@@ -15,25 +17,73 @@ type Actor = {
   target?: ActorCue;
   // A short stroll inserted when the viewer clicks the character; walked before returning to the target.
   detour?: [number, number][];
+  // Idle wandering: a spot he decided to walk to, how fast, and how long he waits before moving on.
+  wander?: [number, number];
+  pace: number;
+  restUntil: number;
+  wasWalking: boolean;
+  footfall: number;
 };
+
+const newActor = (): Actor => ({ x: 0, y: 0, face: 1, step: 0, visible: false, pace: 1, restUntil: 0, wasWalking: false, footfall: 0 });
 
 const WALK_SPEED = 24; // camera pixels per second
 const RUN_SPEED = 54;
 const FRAME_MS = 1000 / 12; // a low frame rate reads as security footage
 
-function moveActor(actor: Actor, dt: number) {
+const inBox = (x: number, y: number, [x0, y0, x1, y1]: number[]) => x >= x0 && x <= x1 && y >= y0 && y <= y1;
+
+// Picks a nearby open spot that can be reached in a straight line without crossing furniture.
+function pickWanderSpot(actor: Actor, home: [number, number], walk: Walkable): [number, number] | undefined {
+  for (let attempt = 0; attempt < 12; attempt++) {
+    const x = Math.min(walk.maxX, Math.max(walk.minX, home[0] + (Math.random() - 0.5) * 150));
+    const y = Math.min(walk.maxY, Math.max(walk.minY, home[1] + (Math.random() - 0.5) * 30));
+    if (Math.hypot(x - actor.x, y - actor.y) < 14) continue;
+    let clear = true;
+    for (let t = 0; t <= 1 && clear; t += 0.05) {
+      const px = actor.x + (x - actor.x) * t, py = actor.y + (y - actor.y) * t;
+      if (t > 0.1 && walk.avoid.some(box => inBox(px, py, box))) clear = false;
+    }
+    if (clear) return [x, y];
+  }
+}
+
+// He only strolls when nothing urgent is happening: no pursuer, no hiding, no weapon drawn.
+function canWander(target: ActorCue | undefined, pursuerVisible: boolean) {
+  if (!target || target.exit || target.run || pursuerVisible) return false;
+  return target.pose === undefined || target.pose === "stand" || target.pose === "read" || target.pose === "phone";
+}
+
+function moveActor(actor: Actor, dt: number, now: number, walk?: Walkable, wanderAllowed = false) {
   const target = actor.target;
   if (!actor.visible || !target) return false;
   const stroll = actor.detour?.[0];
-  const [tx, ty] = stroll ?? target.at;
+  const [tx, ty] = stroll ?? actor.wander ?? target.at;
   const dx = tx - actor.x, dy = ty - actor.y;
   const distance = Math.hypot(dx, dy);
   if (distance < 0.5) {
     if (stroll) { actor.detour!.shift(); return true; }
-    if (target.exit) actor.visible = false;
+    if (actor.wander) actor.wander = undefined;
+    else if (target.exit) { actor.visible = false; return false; }
+    if (actor.wasWalking) { actor.restUntil = now + 1800 + Math.random() * 4200; actor.wasWalking = false; }
+    if (walk && wanderAllowed && now > actor.restUntil) {
+      const roll = Math.random();
+      if (roll < 0.25) {
+        actor.face = actor.face === 1 ? -1 : 1; // glance the other way
+        actor.restUntil = now + 1200 + Math.random() * 2000;
+      } else if (roll < 0.45 && Math.hypot(actor.x - target.at[0], actor.y - target.at[1]) > 6) {
+        actor.wander = [...target.at]; // drift back to where the story put him
+        actor.pace = 0.8 + Math.random() * 0.25;
+      } else {
+        actor.wander = pickWanderSpot(actor, target.at, walk);
+        actor.pace = 0.7 + Math.random() * 0.35;
+        if (!actor.wander) actor.restUntil = now + 1500;
+      }
+    }
     return false;
   }
-  const speed = stroll ? WALK_SPEED : target.run ? RUN_SPEED : WALK_SPEED;
+  actor.wasWalking = true;
+  const speed = stroll ? WALK_SPEED : actor.wander ? WALK_SPEED * actor.pace : target.run ? RUN_SPEED : WALK_SPEED;
   const travel = Math.min(distance, speed * dt);
   actor.x += (dx / distance) * travel;
   actor.y += (dy / distance) * travel;
@@ -70,8 +120,8 @@ function hitsActor(actor: Actor, x: number, y: number) {
 export function CameraFeed({ sceneId, eventIds = [] }: { sceneId: string; eventIds?: readonly string[] }) {
   const canvas = useRef<HTMLCanvasElement>(null);
   const room = useRef<{ scene: string; image: HTMLCanvasElement } | null>(null);
-  const qu = useRef<Actor>({ x: 0, y: 0, face: 1, step: 0, visible: false });
-  const hei = useRef<Actor>({ x: 0, y: 0, face: 1, step: 0, visible: false });
+  const qu = useRef<Actor>(newActor());
+  const hei = useRef<Actor>(newActor());
   const shownScene = useRef<string | null>(null);
 
   const scene = staging[sceneId];
@@ -89,6 +139,8 @@ export function CameraFeed({ sceneId, eventIds = [] }: { sceneId: string; eventI
       hei.current.visible = false;
     }
     qu.current.target = cue.qu;
+    qu.current.wander = undefined;
+    qu.current.restUntil = 0;
     qu.current.visible ||= !cue.qu.exit;
 
     const pursuer = hei.current;
@@ -126,8 +178,16 @@ export function CameraFeed({ sceneId, eventIds = [] }: { sceneId: string; eventI
     const render = (now: number) => {
       const dt = Math.min(0.1, (now - last) / 1000);
       last = now;
-      const walkingQu = moveActor(qu.current, dt);
-      const walkingHei = moveActor(hei.current, dt);
+      const walkingQu = moveActor(qu.current, dt, now, scene.walk, canWander(qu.current.target, hei.current.visible));
+      const walkingHei = moveActor(hei.current, dt, now);
+      // A footfall lands twice per stride; louder when close to the camera, panned by position.
+      for (const [actor, heavy] of [[qu.current, false], [hei.current, true]] as const) {
+        const footfall = Math.floor(actor.step / Math.PI);
+        if (footfall !== actor.footfall) {
+          actor.footfall = footfall;
+          if (actor.visible) playFootstep({ pan: (actor.x - 160) / 160, level: 0.06 + 0.16 * (figureScale(actor.y) / 2.4), heavy });
+        }
+      }
       sinceDraw += dt * 1000;
       if (sinceDraw >= FRAME_MS) {
         sinceDraw = 0;
@@ -145,23 +205,25 @@ export function CameraFeed({ sceneId, eventIds = [] }: { sceneId: string; eventI
           }
         }
         // Furniture and characters are painted back to front, so anyone can stand behind a desk.
-        const scene: Drawable[] = [...props];
+        const layers: Drawable[] = [...props];
         if (sceneNumber === 6) {
-          scene.push({ baseY: guard.fy, draw: c => drawFigure(c, {
+          layers.push({ baseY: guard.fy, draw: c => drawFigure(c, {
             ...guard, face: 1, pose: "stand", step: 0, walking: false, look: guardLook, tick: Math.floor(tick / 6),
           }) });
         }
         for (const { actor, walking, look } of cast) {
           const pose = poseOf(actor, walking);
-          scene.push({ baseY: actor.y, draw: c => {
+          // A slight bob on each step keeps the walk from looking like a glide.
+          const bob = walking ? Math.abs(Math.sin(actor.step)) * 1.2 * figureScale(actor.y) : 0;
+          layers.push({ baseY: actor.y, draw: c => {
             drawFigure(c, {
-              fx: Math.round(actor.x), fy: Math.round(actor.y), face: actor.face,
+              fx: Math.round(actor.x), fy: Math.round(actor.y - bob), face: actor.face,
               pose, step: actor.step, walking, look, tick,
             });
             if (look.flashlight && pose !== "down" && pose !== "crouch") drawFlashlight(c, actor.x, actor.y, actor.face, now);
           } });
         }
-        scene.sort((a, b) => a.baseY - b.baseY).forEach(item => item.draw(ctx));
+        layers.sort((a, b) => a.baseY - b.baseY).forEach(item => item.draw(ctx));
         if (!reduceMotion) drawInterference(ctx, now, Math.random);
       }
       frame = requestAnimationFrame(render);
@@ -187,6 +249,21 @@ export function CameraFeed({ sceneId, eventIds = [] }: { sceneId: string; eventI
 
   return <canvas ref={canvas} className="camera-image" width={CAMERA_WIDTH} height={CAMERA_HEIGHT}
     role="img" aria-label="研究中心监控实时画面" onPointerDown={stroll} onPointerMove={hover} />;
+}
+
+// Push button on the TV panel that mutes the score and footsteps.
+export function SoundToggle() {
+  const [muted, setState] = useState(false);
+  useEffect(() => {
+    setState(isMuted());
+    return onMutedChange(setState);
+  }, []);
+  return (
+    <button type="button" className="reader-tv-button" aria-pressed={!muted} onClick={() => setMuted(!muted)}
+      aria-label={muted ? "打开声音" : "关闭声音"} title={muted ? "打开声音" : "关闭声音"}>
+      {muted ? <VolumeX size={14} /> : <Volume2 size={14} />}
+    </button>
+  );
 }
 
 // In-fiction clock: the night shift starts at 21:30 when the page opens.

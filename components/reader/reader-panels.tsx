@@ -2,6 +2,20 @@ import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "re
 import type { ReaderView } from "../../lib/reader/reader-session";
 import type { NarrativeBlock } from "../../lib/engine/narrative-block";
 import { formatTime, StudyFeed } from "./study-feed";
+import { SoundToggle } from "./camera-feed";
+
+// Right-hand control strip of the CRT: two dials, a power lamp, the sound button and a speaker grille.
+function TvPanel() {
+  return (
+    <div className="reader-tv-panel">
+      <span className="reader-tv-knob" aria-hidden="true" />
+      <span className="reader-tv-knob is-small" aria-hidden="true" />
+      <span className="reader-tv-led" aria-hidden="true" />
+      <SoundToggle />
+      <span className="reader-tv-grille" aria-hidden="true" />
+    </div>
+  );
+}
 
 type Entry = ReaderView["entries"][number];
 type Clue = Extract<NarrativeBlock, { kind: "clue" }>;
@@ -69,15 +83,13 @@ function useFollow(dependency: unknown) {
   return { log, onScroll };
 }
 
-export function ScenePanel({ scene, sceneId, eventIds, story, clues, status, channelOpen, thinking, onTypingChange, error }: {
+export function ScenePanel({ scene, sceneId, eventIds, story, clues, status, onTypingChange, error }: {
   scene?: string;
   sceneId?: string;
   eventIds?: readonly string[];
   story: Entry[];
   clues: Clue[];
   status: string;
-  channelOpen: boolean;
-  thinking: boolean;
   onTypingChange: (typing: boolean) => void;
   error?: ReactNode;
 }) {
@@ -120,13 +132,19 @@ export function ScenePanel({ scene, sceneId, eventIds, story, clues, status, cha
 
   return (
     <section className="reader-panel reader-scene-panel" aria-labelledby="reader-scene-title">
-      <div className="reader-device reader-camera-device">
+      <div className="reader-device reader-camera-device reader-tv">
         <header className="reader-panel-head">
           <h2 id="reader-scene-title">{scene ? `${scene}` : "场景监视画面"}</h2>
           <span className="reader-meta">CAM {sceneId?.match(/^s(\d+)$/)?.[1] ?? "01"}</span>
         </header>
-        <StudyFeed sceneId={sceneId} scene={scene} eventIds={eventIds} channelOpen={channelOpen} thinking={thinking} />
-        <div className="reader-device-foot" aria-hidden="true" />
+        <div className="reader-tv-body">
+          <div className="reader-tv-screen">
+            <StudyFeed sceneId={sceneId} scene={scene} eventIds={eventIds} />
+            <div className="reader-tv-glass" aria-hidden="true" />
+          </div>
+          <TvPanel />
+        </div>
+        <div className="reader-tv-plate" aria-hidden="true">NIGHT·WATCH　CM-14</div>
       </div>
       <article className="reader-paper reader-story" aria-label="现场记录与线索">
         <div className="reader-tabs" role="tablist" aria-label="切换记录">
