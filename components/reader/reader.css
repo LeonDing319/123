@@ -232,6 +232,7 @@
 .reader-fault { color: var(--fault); }
 .reader-form { display: flex; gap: 8px; padding: 12px 16px 0; border-top: 1px solid var(--line); }
 .reader-form input { flex: 1; min-width: 0; }
+.reader-bar-gap { height: 12px; }
 .reader-form button { flex: none; }
 .reader-form input::placeholder { color: var(--muted); }
 .reader-form.is-open input { border-color: var(--signal); box-shadow: 0 0 0 1px var(--signal), 0 0 14px #b1d86b44; }

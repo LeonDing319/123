@@ -7,7 +7,7 @@ import "./reader.css";
 
 const readerStatus = {
   advancing: "自主推进中",
-  waiting_for_player: "轮到你了，给他发一条弹幕",
+  waiting_for_player: "",
   no_action: "当前没有可推进的行动",
   completed: "故事已结束",
 };
@@ -16,6 +16,21 @@ type Command =
   | { action: "start" }
   | { action: "step"; id: string; revision: number }
   | { action: "danmaku"; id: string; requestId: string; text: string };
+
+function useTypedHint(message: string, idle: string, active: boolean) {
+  const [shown, setShown] = useState(0);
+  const [caret, setCaret] = useState(true);
+  useEffect(() => { setShown(0); }, [active, message]);
+  useEffect(() => {
+    if (!active) return;
+    const timer = shown < message.length
+      ? window.setTimeout(() => setShown(n => n + 1), 110)
+      : window.setTimeout(() => setCaret(on => !on), 530);
+    return () => window.clearTimeout(timer);
+  }, [active, shown, caret, message]);
+  if (!active) return idle;
+  return message.slice(0, shown) + (caret || shown < message.length ? "▍" : "");
+}
 
 export function StoryPreview({ onComplete }: { onComplete?: () => void }) {
   const [view, setView] = useState<ReaderView>();
@@ -84,7 +99,7 @@ export function StoryPreview({ onComplete }: { onComplete?: () => void }) {
   const channelOpen = view?.mode === "waiting_for_player" && !pending && !failure;
   const character = view?.character ?? "曲别针";
   const status = thinking ? `${character}正在考虑你的弹幕…`
-    : view ? (view.mode === "waiting_for_player" ? `轮到你了，给${character}发一条弹幕` : readerStatus[view.mode])
+    : view ? (view.mode === "waiting_for_player" ? "" : readerStatus[view.mode])
     : failure ? "会话启动失败" : "正在开启故事…";
 
   function submit(event: FormEvent<HTMLFormElement>) {
@@ -93,6 +108,8 @@ export function StoryPreview({ onComplete }: { onComplete?: () => void }) {
     void send({ action: "danmaku", id: view.id, text: text.trim(), requestId: crypto.randomUUID() });
   }
 
+  // When it is the player's turn, the hint types itself out like a message being written.
+  const typedHint = useTypedHint(`现在告诉${character}你的想法`, `给${character}发一条弹幕`, channelOpen);
   const { story, messages, clues } = getReaderRecords(view);
   return (
     <main className="reader" aria-label={view?.title ?? "叙事记录"}>
@@ -133,7 +150,7 @@ export function StoryPreview({ onComplete }: { onComplete?: () => void }) {
                   maxLength={500}
                   onChange={(event) => setText(event.target.value)}
                   readOnly={pending}
-                  placeholder={channelOpen ? `现在告诉${character}你的想法` : `给${character}发一条弹幕`}
+                  placeholder={typedHint}
                   value={text}
                 />
                 <button type="submit" disabled={!canSend || !text.trim()}>发送</button>

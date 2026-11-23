@@ -131,10 +131,10 @@ export function ScenePanel({ scene, sceneId, eventIds, story, status, channelOpe
           {current && current.kind === "text" && renderLine(current, chars)}
           {error}
         </div>
-        <footer className="reader-paper-footer">
-          <span className={`reader-status${channelOpen ? " is-open" : ""}`} role="status">{status}</span>
+        {(status || typing) && <footer className="reader-paper-footer">
+          <span className="reader-status" role="status">{status}</span>
           {typing && <button type="button" className="reader-skip" onClick={skip}>显示全部</button>}
-        </footer>
+        </footer>}
       </article>
     </section>
   );
@@ -186,11 +186,11 @@ export function DanmakuPanel({ messages, character, input, complete, outgoing, t
       </div>
       <footer className="reader-danmaku-footer">
         {input}
-        <div className="reader-bar">
+        {!channelOpen || paused ? <div className="reader-bar">
           <span className="reader-meta reader-signal" role="status">
-            {paused ? "显示已暂停" : complete ? "接收结束" : channelOpen ? "通道开放，等待你的弹幕" : "接收中"}
+            {paused ? "显示已暂停" : complete ? "接收结束" : "接收中"}
           </span>
-        </div>
+        </div> : <div className="reader-bar-gap" aria-hidden="true" />}
       </footer>
     </section>
   );
