@@ -193,7 +193,8 @@ export function CameraFeed({ sceneId, eventIds = [], reply }: {
       room.current = { scene: sceneId, image };
     }
     const props = sceneProps(sceneNumber);
-    nextMutterAt.current = performance.now() + 9000 + Math.random() * 12000;
+    nextMutterAt.current = performance.now() + 3000 + Math.random() * 3000;
+    let lastMutter = "";
 
     // Speech bubble: he says the line aloud while it types out, then it lingers and disappears.
     const updateSpeech = (now: number) => {
@@ -202,7 +203,10 @@ export function CameraFeed({ sceneId, eventIds = [], reply }: {
       const pool = mutters[sceneId];
       if (!speech.current && pool && actor.visible && now > nextMutterAt.current
           && canWander(actor.target, hei.current.visible)) {
-        speech.current = { text: pool[Math.floor(Math.random() * pool.length)], shown: 0, nextAt: now, holdUntil: 0 };
+        // Never the same line twice in a row.
+        const options = pool.filter(text => text !== lastMutter);
+        lastMutter = options[Math.floor(Math.random() * options.length)];
+        speech.current = { text: lastMutter, shown: 0, nextAt: now, holdUntil: 0 };
       }
       const line = speech.current;
       if (!el) return;
@@ -216,7 +220,7 @@ export function CameraFeed({ sceneId, eventIds = [], reply }: {
       }
       if (line.holdUntil && now > line.holdUntil) {
         speech.current = null;
-        nextMutterAt.current = now + 22000 + Math.random() * 20000;
+        nextMutterAt.current = now + 6000 + Math.random() * 7000;
         el.hidden = true;
         return;
       }
