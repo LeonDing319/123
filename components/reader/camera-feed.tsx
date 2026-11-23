@@ -2,8 +2,8 @@
 
 import { useEffect, useRef, useState, type PointerEvent } from "react";
 import {
-  CAMERA_HEIGHT, CAMERA_WIDTH, drawFigure, drawFlashlight, drawInterference, drawRoom, drawSeatedGuard,
-  protagonistLook, pursuerLook, type Pose,
+  CAMERA_HEIGHT, CAMERA_WIDTH, drawFigure, drawFlashlight, drawInterference, drawShell, figureScale, guard,
+  guardLook, protagonistLook, pursuerLook, sceneProps, type Drawable, type Pose,
 } from "../../lib/reader/camera-scene";
 import { cueFor, staging, type ActorCue } from "../../lib/reader/camera-staging";
 
@@ -63,8 +63,8 @@ function toCameraPoint(canvas: HTMLCanvasElement, clientX: number, clientY: numb
 
 function hitsActor(actor: Actor, x: number, y: number) {
   if (!actor.visible || actor.target?.pose === "down") return false;
-  const scale = Math.min(1.2, Math.max(0.7, 0.7 + ((actor.y - 100) / 76) * 0.5));
-  return Math.abs(x - actor.x) <= 12 * scale && y <= actor.y + 4 && y >= actor.y - 40 * scale;
+  const scale = figureScale(actor.y);
+  return Math.abs(x - actor.x) <= 8 * scale && y <= actor.y + 3 && y >= actor.y - 36 * scale;
 }
 
 export function CameraFeed({ sceneId, eventIds = [] }: { sceneId: string; eventIds?: readonly string[] }) {
@@ -113,9 +113,10 @@ export function CameraFeed({ sceneId, eventIds = [] }: { sceneId: string; eventI
       const image = document.createElement("canvas");
       image.width = CAMERA_WIDTH;
       image.height = CAMERA_HEIGHT;
-      drawRoom(image.getContext("2d")!, sceneNumber);
+      drawShell(image.getContext("2d")!, sceneNumber);
       room.current = { scene: sceneId, image };
     }
+    const props = sceneProps(sceneNumber);
     const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
     let frame = 0;
     let last = performance.now();
@@ -132,7 +133,6 @@ export function CameraFeed({ sceneId, eventIds = [] }: { sceneId: string; eventI
         sinceDraw = 0;
         tick++;
         ctx.drawImage(room.current!.image, 0, 0);
-        if (sceneNumber === 6) drawSeatedGuard(ctx, tick);
 
         const cast = [
           { actor: qu.current, walking: walkingQu, look: protagonistLook },
@@ -144,16 +144,24 @@ export function CameraFeed({ sceneId, eventIds = [] }: { sceneId: string; eventI
             if (!me.walking) me.actor.face = other.actor.x > me.actor.x ? 1 : -1;
           }
         }
+        // Furniture and characters are painted back to front, so anyone can stand behind a desk.
+        const scene: Drawable[] = [...props];
+        if (sceneNumber === 6) {
+          scene.push({ baseY: guard.fy, draw: c => drawFigure(c, {
+            ...guard, face: 1, pose: "stand", step: 0, walking: false, look: guardLook, tick: Math.floor(tick / 6),
+          }) });
+        }
         for (const { actor, walking, look } of cast) {
           const pose = poseOf(actor, walking);
-          drawFigure(ctx, {
-            fx: Math.round(actor.x), fy: Math.round(actor.y), face: actor.face,
-            pose, step: actor.step, walking, look, tick,
-          });
-          if (look.flashlight && pose !== "down" && pose !== "crouch") {
-            drawFlashlight(ctx, actor.x, actor.y, actor.face, now);
-          }
+          scene.push({ baseY: actor.y, draw: c => {
+            drawFigure(c, {
+              fx: Math.round(actor.x), fy: Math.round(actor.y), face: actor.face,
+              pose, step: actor.step, walking, look, tick,
+            });
+            if (look.flashlight && pose !== "down" && pose !== "crouch") drawFlashlight(c, actor.x, actor.y, actor.face, now);
+          } });
         }
+        scene.sort((a, b) => a.baseY - b.baseY).forEach(item => item.draw(ctx));
         if (!reduceMotion) drawInterference(ctx, now, Math.random);
       }
       frame = requestAnimationFrame(render);

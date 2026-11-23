@@ -1,5 +1,6 @@
 // Pixel-art drawing for the six fixed security cameras.
-// The room art follows the original camera sketches; figures are drawn live on top of it.
+// Everything is drawn in one-point perspective around a single vanishing point, so walls,
+// floor, furniture and characters agree on depth. Characters are paperclips.
 
 export const CAMERA_WIDTH = 320;
 export const CAMERA_HEIGHT = 176;
@@ -11,6 +12,26 @@ export const palette = [
 
 type Ctx = CanvasRenderingContext2D;
 type Point = [number, number];
+
+// ---- Room geometry -------------------------------------------------------------------------
+
+const VP: Point = [160, 58]; // the single vanishing point
+const BACK = { left: 72, right: 248, top: 26, bottom: 99 }; // back wall, 55% of the image around VP
+const FLOOR_EDGE = 132.5; // where the wall-floor seams leave the image at x = 0 and x = 320
+
+// Moves a point a fraction `f` of the way toward the vanishing point (i.e. further away).
+const recede = ([x, y]: Point, f: number): Point => [x + (VP[0] - x) * f, y + (VP[1] - y) * f];
+
+// Left and right edges of the visible floor on a given row.
+const floorLeft = (y: number) => BACK.left - ((y - BACK.bottom) * BACK.left) / (FLOOR_EDGE - BACK.bottom);
+const floorRight = (y: number) => BACK.right + ((y - BACK.bottom) * (CAMERA_WIDTH - BACK.right)) / (FLOOR_EDGE - BACK.bottom);
+
+// How big a character standing at row `fy` appears; proportional to its distance below the horizon.
+export function figureScale(fy: number) {
+  return Math.min(2.4, Math.max(0.6, (1.05 * (fy - VP[1])) / (BACK.bottom - VP[1])));
+}
+
+// ---- Pixel primitives ----------------------------------------------------------------------
 
 // Scanline polygon fill keeps every edge on whole pixels, so the limited palette stays crisp.
 export function fillPoly(ctx: Ctx, points: Point[], color: string) {
@@ -37,8 +58,10 @@ export function fillPoly(ctx: Ctx, points: Point[], color: string) {
   }
 }
 
-function drawLine(ctx: Ctx, points: Point[], color: string) {
+// Pixel line; `size` stamps a square brush, `keep` can reject pixels (used to clip to the floor).
+function drawLine(ctx: Ctx, points: Point[], color: string, size = 1, keep?: (x: number, y: number) => boolean) {
   ctx.fillStyle = color;
+  const half = Math.floor(size / 2);
   for (let i = 0; i + 1 < points.length; i++) {
     let [x0, y0] = points[i].map(Math.round);
     const [x1, y1] = points[i + 1].map(Math.round);
@@ -46,7 +69,7 @@ function drawLine(ctx: Ctx, points: Point[], color: string) {
     const sx = x0 < x1 ? 1 : -1, sy = y0 < y1 ? 1 : -1;
     let err = dx + dy;
     for (;;) {
-      ctx.fillRect(x0, y0, 1, 1);
+      if (!keep || keep(x0, y0)) ctx.fillRect(x0 - half, y0 - half, size, size);
       if (x0 === x1 && y0 === y1) break;
       const e2 = 2 * err;
       if (e2 >= dy) { err += dy; x0 += sx; }
@@ -55,148 +78,215 @@ function drawLine(ctx: Ctx, points: Point[], color: string) {
   }
 }
 
-export function drawRoom(ctx: Ctx, scene: number) {
-  const box = (x: number, y: number, w: number, h: number, c: number) => {
-    ctx.fillStyle = palette[c];
-    ctx.fillRect(x, y, w, h);
-  };
-  const poly = (pts: Point[], c: number) => fillPoly(ctx, pts, palette[c]);
-  const line = (pts: Point[], c: number) => drawLine(ctx, pts, palette[c]);
+const box = (ctx: Ctx, x: number, y: number, w: number, h: number, c: number) => {
+  ctx.fillStyle = palette[c];
+  ctx.fillRect(Math.round(x), Math.round(y), Math.round(w), Math.round(h));
+};
 
-  box(0, 0, CAMERA_WIDTH, CAMERA_HEIGHT, 2);
-  // Back wall, floor tiles and ceiling light wells share a single vanishing point.
-  poly([[0, 0], [77, 27], [254, 27], [320, 0]], 2);
-  poly([[77, 27], [254, 27], [254, 99], [77, 99]], 4);
-  poly([[0, 0], [77, 27], [77, 99], [0, 150]], 3);
-  poly([[320, 0], [254, 27], [254, 99], [320, 150]], 2);
-  poly([[0, 150], [77, 99], [254, 99], [320, 150], [320, 176], [0, 176]], 4);
-  for (let x = -360; x <= 700; x += 60) line([[158 + Math.floor((x - 158) / 6), 99], [x, 176]], 3);
-  for (const y of [105, 115, 130, 154]) line([[0, y], [320, y]], 3);
-  for (const y of [29, 95, 98]) line([[77, y], [254, y]], 2);
+// ---- Room shell: walls, floor, ceiling and things mounted on the back wall -----------------
+
+export function drawShell(ctx: Ctx, scene: number) {
+  const poly = (pts: Point[], c: number) => fillPoly(ctx, pts, palette[c]);
+  const line = (pts: Point[], c: number, keep?: (x: number, y: number) => boolean) => drawLine(ctx, pts, palette[c], 1, keep);
+  const { left, right, top, bottom } = BACK;
+
+  box(ctx, 0, 0, CAMERA_WIDTH, CAMERA_HEIGHT, 2); // ceiling
+  poly([[left, top], [right, top], [right, bottom], [left, bottom]], 4); // back wall
+  poly([[0, 0], [left, top], [left, bottom], [0, FLOOR_EDGE]], 3); // left wall
+  poly([[CAMERA_WIDTH, 0], [right, top], [right, bottom], [CAMERA_WIDTH, FLOOR_EDGE]], 2); // right wall
+  poly([[0, FLOOR_EDGE], [left, bottom], [right, bottom], [CAMERA_WIDTH, FLOOR_EDGE], [CAMERA_WIDTH, CAMERA_HEIGHT], [0, CAMERA_HEIGHT]], 4);
+
+  // Floor tiles: seams run to the vanishing point, rows get closer together with distance.
+  const onFloor = (x: number, y: number) => y >= bottom && x >= floorLeft(y) && x <= floorRight(y);
+  const k = (bottom - VP[1]) / (CAMERA_HEIGHT - VP[1]);
+  for (let x = -360; x <= 680; x += 60) line([[VP[0] + (x - VP[0]) * k, bottom], [x, CAMERA_HEIGHT]], 3, onFloor);
+  for (const m of [1.15, 1.4, 1.75, 2.3]) {
+    const y = Math.round(VP[1] + (bottom - VP[1]) * m);
+    line([[Math.max(0, floorLeft(y)), y], [Math.min(CAMERA_WIDTH, floorRight(y)), y]], 3);
+  }
+
+  // Back wall trim and panel seams.
+  for (const y of [29, 95, 98]) line([[left, y], [right, y]], 2);
   for (const x of [119, 159, 198, 236]) line([[x, 29], [x, 94]], 3);
-  for (const x of [108, 178]) poly([[x, 14], [x + 39, 14], [x + 33, 18], [x + 6, 18]], 7);
+
+  // Ceiling light panels: rectangles on the ceiling, narrower at their far edge.
+  const farRatio = (VP[1] - 18) / (VP[1] - 12);
+  for (const [a, b] of [[104, 144], [176, 216]]) {
+    poly([[a, 12], [b, 12], [VP[0] + (b - VP[0]) * farRatio, 18], [VP[0] + (a - VP[0]) * farRatio, 18]], 7);
+  }
 
   // Metal door frame and inset observation pane.
   const bx = scene === 6 ? 169 : 202;
-  box(bx, 41, 31, 58, 1); box(bx + 2, 43, 27, 55, 3); box(bx + 7, 49, 15, 14, 1);
-  box(bx + 8, 50, 13, 10, 5); box(bx + 22, 72, 3, 2, 7);
+  box(ctx, bx, 41, 31, 58, 1); box(ctx, bx + 2, 43, 27, 55, 3); box(ctx, bx + 7, 49, 15, 14, 1);
+  box(ctx, bx + 8, 50, 13, 10, 5); box(ctx, bx + 22, 72, 3, 2, 7);
 
-  const cabinet = (x: number, y: number, w: number, h: number) => {
-    box(x + 3, y + 2, w, h, 1); box(x, y, w, h, 4);
-    line([[x, y + h - 1], [x, y], [x + w - 1, y]], 6);
-    for (let cy = y + 3; cy < y + h - 9; cy += 12) {
-      box(x + 2, cy, w - 4, 10, 3); line([[x + 3, cy], [x + w - 4, cy]], 5);
-      box(x + Math.floor(w / 2) - 3, cy + 3, 7, 2, 7);
-    }
-  };
-  const desk = (x: number, y: number) => {
-    poly([[x, y], [x + 48, y], [x + 62, y + 8], [x + 7, y + 8]], 6);
-    box(x + 7, y + 9, 55, 4, 2); box(x + 8, y + 13, 3, 18, 1); box(x + 56, y + 13, 3, 18, 1);
-  };
-
-  if (scene === 1 || scene === 5) {
-    for (const x of [80, 106, 132]) cabinet(x, 44, 24, 53);
-    for (const x of [9, 38]) cabinet(x, 57, 27, 68);
-    desk(108, 111);
-    for (let i = 0; i < 4; i++) box(127 + i * 2, 112 + i, 11, 2, 8);
-    if (scene === 5) {
-      for (const [x, y] of [[181, 113], [199, 127], [177, 101]]) {
-        box(x, y, 20, 13, 3); box(x, y, 20, 2, 6); box(x + 8, y + 2, 3, 8, 5);
-      }
-    }
-  } else if (scene === 2 || scene === 4) {
-    for (const x of [95, 135]) { box(x, 42, 23, 55, 1); box(x + 2, 44, 19, 52, 3); box(x + 5, 48, 13, 14, 5); }
-    if (scene === 2) for (let j = 0; j < 6; j++) box(6 + j * 4, 145 - j * 6, 46, 4, 5);
-  } else {
-    desk(94, 84); box(106, 65, 28, 18, 1); box(108, 67, 24, 13, 5); box(117, 83, 5, 4, 2);
-    if (scene === 3) { box(145, 40, 45, 28, 1); box(147, 42, 41, 24, 3); desk(12, 116); }
-    else { desk(54, 111); cabinet(235, 51, 17, 45); }
+  if (scene === 2 || scene === 4) {
+    for (const x of [95, 135]) { box(ctx, x, 42, 23, 55, 1); box(ctx, x + 2, 44, 19, 52, 3); box(ctx, x + 5, 48, 13, 14, 5); }
   }
+  if (scene === 3) { box(ctx, 145, 40, 45, 28, 1); box(ctx, 147, 42, 41, 24, 3); }
 }
+
+// ---- Furniture: drawn every frame, depth-sorted together with the characters ---------------
+
+export type Drawable = { baseY: number; draw: (ctx: Ctx) => void };
+
+function cabinet(x: number, y: number, w: number, h: number, depth: number): Drawable {
+  return {
+    baseY: y + h,
+    draw(ctx) {
+      // The visible side faces the vanishing point.
+      const edge = x + w < VP[0] ? x + w : x;
+      fillPoly(ctx, [[edge, y], recede([edge, y], depth), recede([edge, y + h], depth), [edge, y + h]], palette[1]);
+      if (y > VP[1]) fillPoly(ctx, [[x, y], [x + w, y], recede([x + w, y], depth), recede([x, y], depth)], palette[6]);
+      box(ctx, x, y, w, h, 4);
+      drawLine(ctx, [[x, y + h - 1], [x, y], [x + w - 1, y]], palette[6]);
+      for (let cy = y + 3; cy < y + h - 9; cy += 12) {
+        box(ctx, x + 2, cy, w - 4, 10, 3);
+        drawLine(ctx, [[x + 3, cy], [x + w - 4, cy]], palette[5]);
+        box(ctx, x + Math.floor(w / 2) - 3, cy + 3, 7, 2, 7);
+      }
+    },
+  };
+}
+
+function desk(x: number, y: number, extra?: (ctx: Ctx) => void): Drawable {
+  const w = 48, depth = 8;
+  // The front edge is the back edge scaled away from the vanishing point.
+  const s = (y + depth - VP[1]) / (y - VP[1]);
+  const fl = VP[0] + (x - VP[0]) * s;
+  const fr = VP[0] + (x + w - VP[0]) * s;
+  const fy = y + depth;
+  return {
+    baseY: fy + 23,
+    draw(ctx) {
+      box(ctx, x + 2, y + 1, 3, 20, 1); box(ctx, x + w - 5, y + 1, 3, 20, 1); // back legs
+      fillPoly(ctx, [[x, y], [x + w, y], [fr, fy], [fl, fy]], palette[6]);
+      box(ctx, fl, fy + 1, fr - fl, 4, 2);
+      box(ctx, fl + 1, fy + 5, 3, 18, 1); box(ctx, fr - 4, fy + 5, 3, 18, 1);
+      extra?.(ctx);
+    },
+  };
+}
+
+function crate(x: number, y: number): Drawable {
+  return {
+    baseY: y + 13,
+    draw(ctx) {
+      fillPoly(ctx, [[x, y], [x + 20, y], recede([x + 20, y], 0.08), recede([x, y], 0.08)], palette[6]);
+      box(ctx, x, y, 20, 13, 3); box(ctx, x + 8, y + 2, 3, 8, 5);
+    },
+  };
+}
+
+const stairs: Drawable = {
+  baseY: 149,
+  draw(ctx) { for (let j = 0; j < 6; j++) box(ctx, 6 + j * 4, 145 - j * 6, 46, 4, 5); },
+};
+
+const papers = (ctx: Ctx) => { for (let i = 0; i < 4; i++) box(ctx, 127 + i * 2, 112 + i, 11, 2, 8); };
+const terminal = (ctx: Ctx) => { box(ctx, 106, 65, 28, 18, 1); box(ctx, 108, 67, 24, 13, 5); box(ctx, 117, 83, 5, 4, 2); };
+
+export function sceneProps(scene: number): Drawable[] {
+  if (scene === 1 || scene === 5) {
+    const props = [
+      ...[80, 106, 132].map(x => cabinet(x, 44, 24, 53, 0.03)),
+      ...[9, 38].map(x => cabinet(x, 57, 27, 68, 0.1)),
+      desk(108, 111, papers),
+    ];
+    if (scene === 5) props.push(crate(181, 113), crate(199, 127), crate(177, 101));
+    return props;
+  }
+  if (scene === 2) return [stairs];
+  if (scene === 4) return [];
+  if (scene === 3) return [desk(94, 84, terminal), desk(12, 116)];
+  return [desk(94, 84, terminal), desk(54, 111), cabinet(235, 51, 17, 45, 0.04)];
+}
+
+// ---- Paperclip characters ------------------------------------------------------------------
 
 export type Pose = "stand" | "read" | "phone" | "crouch" | "listen" | "knife" | "down";
 
-export type FigureLook = {
-  body: number;
-  face: number;
-  arm: number;
-  flashlight?: boolean;
-};
+export type FigureLook = { wire: number; glint: number; eye: number; flashlight?: boolean };
 
-export const protagonistLook: FigureLook = { body: 1, face: 5, arm: 5 };
-export const pursuerLook: FigureLook = { body: 0, face: 4, arm: 3, flashlight: true };
+export const protagonistLook: FigureLook = { wire: 8, glint: 9, eye: 0 };
+export const pursuerLook: FigureLook = { wire: 0, glint: 3, eye: 9, flashlight: true };
+export const guardLook: FigureLook = { wire: 6, glint: 8, eye: 0 };
 
-// Draws one figure with its feet at (fx, fy). `step` drives the walking cycle, `face` mirrors it.
+// A gem clip bent into one stroke, feet at (0, 0), facing +x. Units are scaled by figureScale.
+const CLIP: Point[] = [
+  [-2, -15], [-2, -29], [-1, -31], [1, -31], [2, -29], [2, -9], [1, -7], [-4, -7],
+  [-5, -9], [-5, -32], [-4, -34], [4, -34], [5, -32], [5, -16],
+];
+
+function figureTransform(fx: number, fy: number, face: 1 | -1, pose: Pose) {
+  const s = figureScale(fy);
+  const squash = pose === "crouch" ? 0.7 : 1;
+  const lean = pose === "listen" ? 0.14 : 0;
+  return ([dx, dy]: Point): Point => {
+    if (pose === "down") return [fx + (-dy - 18) * s * face, fy + (dx * 0.6 - 3) * s];
+    return [fx + (dx - dy * lean) * s * face, fy + dy * squash * s];
+  };
+}
+
 export function drawFigure(ctx: Ctx, opts: {
   fx: number; fy: number; face: 1 | -1; pose: Pose; step: number; walking: boolean; look: FigureLook; tick: number;
 }) {
   const { fx, fy, face, pose, step, walking, look, tick } = opts;
-  const s = Math.min(1.2, Math.max(0.7, 0.7 + ((fy - 100) / 76) * 0.5));
-  const p = (dx: number, dy: number): Point => [fx + dx * s * face, fy + dy * s];
-  const poly = (pts: Point[], c: number | string) => fillPoly(ctx, pts, typeof c === "number" ? palette[c] : c);
-  const rect = (dx: number, dy: number, w: number, h: number, c: number | string) =>
-    poly([p(dx, dy), p(dx + w, dy), p(dx + w, dy + h), p(dx, dy + h)], c);
-  const line = (pts: Point[], c: number) => drawLine(ctx, pts.map(([dx, dy]) => p(dx, dy)), palette[c]);
+  const s = figureScale(fy);
+  const T = figureTransform(fx, fy, face, pose);
+  const wire = Math.max(1, Math.round(1.3 * s));
+  const thin = Math.max(1, wire - 1);
+  const stroke = (pts: Point[], c: number, size = wire) => drawLine(ctx, pts.map(T), palette[c], size);
+  const rect = (dx: number, dy: number, w: number, h: number, c: number) =>
+    fillPoly(ctx, [T([dx, dy]), T([dx + w, dy]), T([dx + w, dy + h]), T([dx, dy + h])], palette[c]);
 
-  // Floor shadow.
-  poly([p(-6, -1), p(6, 0), p(22, 4), p(6, 4)], 3);
+  // Floor shadow, always flat on the floor.
+  fillPoly(ctx, [[fx - 6 * s, fy], [fx + 6 * s, fy], [fx + 9 * s * face, fy + 2 * s], [fx - 3 * s * face, fy + 2 * s]], palette[3]);
 
-  if (pose === "down") {
-    rect(-14, -6, 24, 6, look.body);
-    rect(10, -7, 7, 7, look.body);
-    rect(13, -6, 3, 3, look.face);
-    return;
+  if (pose !== "down") {
+    const swing = walking ? Math.sin(step) * 2 : 0;
+    stroke([[-1.5, -7], [-1.5 + swing, 0]], look.wire, thin);
+    stroke([[2, -7], [2 - swing, 0]], look.wire, thin);
   }
 
-  const lift = pose === "crouch" ? 10 : 0;
-  const lean = pose === "listen" ? 2 : 0;
-  const head = -33 + lift;
-
-  // Legs: a two-phase swing while walking, folded when crouching.
-  const swing = walking ? Math.round(Math.sin(step) * 2) : 0;
-  if (pose === "crouch") {
-    rect(-5, -6, 4, 6, look.body);
-    rect(1, -5, 4, 5, look.body);
-  } else {
-    rect(-4 + swing, -11, 3, walking && swing > 0 ? 10 : 11, look.body);
-    rect(2 - swing, -11, 3, walking && swing < 0 ? 10 : 11, look.body);
+  stroke(CLIP, look.wire);
+  stroke([[-4, -33], [-3, -34]], look.glint, Math.max(1, wire - 1));
+  // Two eyes inside the inner loop; they slide toward the facing side.
+  const eye = Math.max(1, Math.round(s * 0.9));
+  for (const ex of [-0.6, 1.2]) {
+    const [x, y] = T([ex, -26]);
+    box(ctx, x - eye / 2, y - eye / 2, eye, eye, look.eye);
   }
+  if (pose === "down") return;
 
-  // Torso and head.
-  poly([p(-4 + lean, head + 7), p(3 + lean, head + 7), p(7, -11 + (lift ? 5 : 0)), p(-7, -11 + (lift ? 5 : 0))], look.body);
-  rect(-4 + lean * 1.5, head, 8, 8, look.body);
-  rect(2 + lean * 1.5, head + 2, 3, 4, look.face);
-
-  // Arm and whatever the hand is doing.
-  const shoulder: Point = [3 + lean, head + 10];
-  const idleWave = walking ? 0 : (tick % 2);
+  const hand: Point = [5, -20];
   if (pose === "read" || pose === "phone") {
-    line([shoulder, [8, head + 13], [10, head + 9]], look.arm);
-    rect(9, head + 6, pose === "phone" ? 3 : 5, pose === "phone" ? 4 : 6, pose === "phone" ? 9 : 8);
+    stroke([hand, [8, -23]], look.wire, thin);
+    if (pose === "read") rect(7, -28, 5, 6, 9);
+    else rect(7.5, -26, 2.5, 3.5, 9);
   } else if (pose === "knife") {
-    line([shoulder, [10, head + 12], [14, head + 12]], look.arm);
-    line([[15, head + 12], [19, head + 11]], 9);
+    stroke([hand, [10, -20]], look.wire, thin);
+    stroke([[10, -20], [15, -21]], 9, 1);
   } else if (pose === "listen") {
-    line([shoulder, [8, head + 8], [8, head + 5]], look.arm);
+    stroke([hand, [7, -24], [7, -28]], look.wire, thin);
   } else {
-    line([shoulder, [7, head + 14], [10, head + 12 + idleWave]], look.arm);
+    stroke([hand, [7, -16 + (walking ? 0 : tick % 2)]], look.wire, thin);
   }
 
   if (look.flashlight && pose !== "crouch") {
-    rect(9, head + 9, 6, 4, 6);
-    rect(14, head + 8, 2, 6, 8);
+    rect(7, -22, 5, 3, 6);
+    rect(12, -23, 1.5, 5, 8);
   }
 }
 
-// The flashlight cone is the one translucent element; it sweeps slowly and flickers.
+// The flashlight cone fades with distance, sweeps slowly and flickers.
 export function drawFlashlight(ctx: Ctx, fx: number, fy: number, face: 1 | -1, time: number) {
-  const s = Math.min(1.2, Math.max(0.7, 0.7 + ((fy - 100) / 76) * 0.5));
-  const hx = fx + 16 * s * face;
-  const hy = fy - 22 * s;
+  const s = figureScale(fy);
+  const hx = fx + 13 * s * face;
+  const hy = fy - 20.5 * s;
   const sweep = Math.sin(time / 1300) * 14;
   const flicker = Math.sin(time / 90) > 0.93 ? 0.02 : 0;
   ctx.save();
-  // Three overlapping cones of growing length make the beam fade out with distance.
   for (const length of [60, 110, 160]) {
     const k = length / 160;
     ctx.globalAlpha = 0.05 + flicker;
@@ -210,13 +300,8 @@ export function drawFlashlight(ctx: Ctx, fx: number, fy: number, face: 1 | -1, t
   ctx.restore();
 }
 
-// Seated duty officer behind the lobby desk in the last scene.
-export function drawSeatedGuard(ctx: Ctx, tick: number) {
-  const x = 84, top = 92;
-  fillPoly(ctx, [[x - 5, top + 8], [x + 5, top + 8], [x + 8, 111], [x - 8, 111]], palette[2]);
-  ctx.fillStyle = palette[2]; ctx.fillRect(x - 4, top, 8, 8);
-  ctx.fillStyle = palette[6]; ctx.fillRect(x - 2 + (tick % 8 < 4 ? 0 : 1), top + 2, 3, 3);
-}
+// Duty officer standing behind the lobby desk in the last scene.
+export const guard = { fx: 80, fy: 128 };
 
 // Live sensor noise, an occasional horizontal tear and a slow rolling band.
 export function drawInterference(ctx: Ctx, time: number, random: () => number) {
