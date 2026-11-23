@@ -108,7 +108,7 @@
 .reader-tabs { flex: none; display: flex; gap: 6px; padding: 8px 14px 0 44px; border-bottom: 2px solid #6f86a066; }
 .reader .reader-tabs button {
   min-height: 34px; padding: 4px 14px; margin-bottom: -2px;
-  font: bold 15px/1.4 SimSun, serif; color: #5b5238;
+  font: 500 16px/1.4 var(--hand); color: #5b5238;
   background: #cbb386; border: 1px solid #a88e60; border-bottom: 0; border-radius: 6px 6px 0 0;
   display: flex; align-items: center; gap: 6px;
 }
@@ -159,8 +159,12 @@
   --fault: #792e23;
   --muted: #6b6145;
   min-height: 0; display: flex; flex-direction: column; overflow-wrap: anywhere;
-  --rule: 26px;
-  color: #3f3c2b;
+  --rule: 28px;
+  --hand: "LXGW WenKai", "霞鹜文楷", "Kaiti SC", KaiTi, serif;
+  font-family: var(--hand);
+  font-size: 17px;
+  letter-spacing: .02em;
+  color: #2f3a56; /* blue-black fountain pen ink */
   /* Paper stock: warm gradient, faint fibres and a darker edge; the ruling lives on the scrolling text. */
   background:
     radial-gradient(ellipse at 50% 40%, transparent 60%, #8a6f4022 100%),
@@ -179,7 +183,7 @@
 }
 .reader-story { flex: 1; margin-inline: 7px; }
 .reader-paper-head { flex: none; display: flex; align-items: baseline; justify-content: space-between; padding-right: 16px; }
-.reader-clue-count, .reader-clue-no { font: 13px/1.5 var(--mono); color: #7a4a25; }
+.reader-clue-count, .reader-clue-no { font: 15px/var(--rule) var(--hand); color: #8a3b2a; }
 .reader-paper-title { flex: none; margin: 0; padding: 9px 16px 5px 44px; font: bold 17px/1.5 SimSun, serif; border-bottom: 2px solid #6f86a066; }
 .reader-paper-head .reader-paper-title { border: 0; }
 .reader-paper-head { border-bottom: 2px solid #6f86a066; }
@@ -187,15 +191,15 @@
 .reader-paper .reader-list li { padding: 0; border: 0; line-height: var(--rule); }
 .reader-paper .reader-list p { margin: 0; }
 .reader-paper .reader-empty { padding: 0 16px 0 44px; line-height: var(--rule); }
-.reader-clue-line { color: #7a4a25; }
-.reader-story .reader-ending { font: bold 16px/var(--rule) SimSun, serif; color: var(--fault); text-indent: 0; }
+.reader-clue-line { color: #8a3b2a; }
+.reader-story .reader-ending { font: 500 18px/var(--rule) var(--hand); color: var(--fault); text-indent: 0; }
 .reader-caret { display: inline-block; width: .5em; height: 1em; margin-left: 2px; vertical-align: -2px; background: currentColor; animation: rec-blink 1s steps(1) infinite; }
 .reader-story-log { flex: 1; padding: 0 16px 0 44px; cursor: default; }
 .reader-story p { margin: 0; max-width: 44em; line-height: var(--rule); text-indent: 2em; }
 .reader-paper-footer { flex: none; display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 44px; padding: 5px 16px; border-top: 1px solid var(--line); }
-.reader-status { font: 14px/1.5 var(--mono); color: var(--signal); }
+.reader-status { font: 15px/1.5 var(--hand); color: var(--signal); }
 .reader-status.is-open { color: #f3e9c8; background: #3c5026; padding: 2px 10px; animation: alert-pulse 1.4s ease-in-out infinite; }
-.reader .reader-skip { min-height: 32px; padding: 2px 10px; color: #3f3c2b; background: #d6bf94; border: 2px outset #b39c70; }
+.reader .reader-skip { min-height: 32px; padding: 2px 10px; font: 15px/1.4 var(--hand); color: #3f3c2b; background: #d6bf94; border: 2px outset #b39c70; }
 .reader-side {
   min-width: 0;
   min-height: 0;
