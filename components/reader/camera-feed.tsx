@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type PointerEvent } from "react";
 import {
   CAMERA_HEIGHT, CAMERA_WIDTH, drawFigure, drawFlashlight, drawInterference, drawRoom, drawSeatedGuard,
   protagonistLook, pursuerLook, type Pose,
@@ -13,6 +13,8 @@ type Actor = {
   step: number;
   visible: boolean;
   target?: ActorCue;
+  // A short stroll inserted when the viewer clicks the character; walked before returning to the target.
+  detour?: [number, number][];
 };
 
 const WALK_SPEED = 24; // camera pixels per second
@@ -22,14 +24,17 @@ const FRAME_MS = 1000 / 12; // a low frame rate reads as security footage
 function moveActor(actor: Actor, dt: number) {
   const target = actor.target;
   if (!actor.visible || !target) return false;
-  const [tx, ty] = target.at;
+  const stroll = actor.detour?.[0];
+  const [tx, ty] = stroll ?? target.at;
   const dx = tx - actor.x, dy = ty - actor.y;
   const distance = Math.hypot(dx, dy);
   if (distance < 0.5) {
+    if (stroll) { actor.detour!.shift(); return true; }
     if (target.exit) actor.visible = false;
     return false;
   }
-  const travel = Math.min(distance, (target.run ? RUN_SPEED : WALK_SPEED) * dt);
+  const speed = stroll ? WALK_SPEED : target.run ? RUN_SPEED : WALK_SPEED;
+  const travel = Math.min(distance, speed * dt);
   actor.x += (dx / distance) * travel;
   actor.y += (dy / distance) * travel;
   actor.step += travel * 0.45;
@@ -41,6 +46,25 @@ function poseOf(actor: Actor, walking: boolean): Pose {
   const pose = actor.target?.pose ?? "stand";
   if (!walking) return pose;
   return pose === "knife" ? "knife" : "stand";
+}
+
+// Converts a click on the scaled canvas into camera pixels, honouring object-fit and object-position.
+function toCameraPoint(canvas: HTMLCanvasElement, clientX: number, clientY: number) {
+  const box = canvas.getBoundingClientRect();
+  const style = getComputedStyle(canvas);
+  const fit = style.objectFit;
+  let sx = box.width / CAMERA_WIDTH, sy = box.height / CAMERA_HEIGHT;
+  if (fit === "cover" || fit === "contain") sx = sy = (fit === "cover" ? Math.max : Math.min)(sx, sy);
+  const [px, py] = style.objectPosition.split(" ").map(v => v.endsWith("%") ? parseFloat(v) / 100 : 0.5);
+  const offsetX = (box.width - CAMERA_WIDTH * sx) * px;
+  const offsetY = (box.height - CAMERA_HEIGHT * sy) * py;
+  return { x: (clientX - box.left - offsetX) / sx, y: (clientY - box.top - offsetY) / sy };
+}
+
+function hitsActor(actor: Actor, x: number, y: number) {
+  if (!actor.visible || actor.target?.pose === "down") return false;
+  const scale = Math.min(1.2, Math.max(0.7, 0.7 + ((actor.y - 100) / 76) * 0.5));
+  return Math.abs(x - actor.x) <= 12 * scale && y <= actor.y + 4 && y >= actor.y - 40 * scale;
 }
 
 export function CameraFeed({ sceneId, eventIds = [] }: { sceneId: string; eventIds?: readonly string[] }) {
@@ -138,8 +162,23 @@ export function CameraFeed({ sceneId, eventIds = [] }: { sceneId: string; eventI
     return () => cancelAnimationFrame(frame);
   }, [scene, sceneId]);
 
+  // Clicking the protagonist makes him take a few steps away and come back.
+  const stroll = (event: PointerEvent<HTMLCanvasElement>) => {
+    const { x, y } = toCameraPoint(event.currentTarget, event.clientX, event.clientY);
+    const actor = qu.current;
+    if (!hitsActor(actor, x, y) || actor.detour?.length) return;
+    const home: [number, number] = [actor.x, actor.y];
+    const side = actor.x > CAMERA_WIDTH - 40 ? -1 : actor.x < 40 ? 1 : (Math.random() < 0.5 ? -1 : 1);
+    const depth = actor.y > 150 ? -6 : 6;
+    actor.detour = [[actor.x + side * 18, actor.y + depth], [actor.x + side * 10, actor.y], home];
+  };
+  const hover = (event: PointerEvent<HTMLCanvasElement>) => {
+    const { x, y } = toCameraPoint(event.currentTarget, event.clientX, event.clientY);
+    event.currentTarget.style.cursor = hitsActor(qu.current, x, y) ? "pointer" : "";
+  };
+
   return <canvas ref={canvas} className="camera-image" width={CAMERA_WIDTH} height={CAMERA_HEIGHT}
-    role="img" aria-label="研究中心监控实时画面" />;
+    role="img" aria-label="研究中心监控实时画面" onPointerDown={stroll} onPointerMove={hover} />;
 }
 
 // In-fiction clock: the night shift starts at 21:30 when the page opens.
