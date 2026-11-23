@@ -1,0 +1,12 @@
+{
+  "version": 2,
+  "skills": {
+    "pixel-art-studio": {
+      "source": "MingfengHong/pixel-art-studio",
+      "commit": "f5e5099f20eed1d13065e3900bcf2d1511e4eb44",
+      "sourceType": "github",
+      "skillPath": "skills/pixel-art-studio/SKILL.md",
+      "computedHash": "f9e271d5159bb3f0baf58f259fee174dbbc4b0d032a67f04c80597d6ba7e8cda"
+    }
+  }
+}

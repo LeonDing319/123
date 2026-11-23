@@ -1,0 +1,11 @@
+[
+  {
+    "id": "ending-door-open",
+    "priority": 1,
+    "sceneId": "scene-study",
+    "title": "门开了",
+    "requiresClueIds": ["clue-door-open"],
+    "excludesClueIds": [],
+    "narrativeGoal": "曲别针按核实过的便签提示打开书房门。"
+  }
+]

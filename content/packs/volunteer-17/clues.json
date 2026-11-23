@@ -1,0 +1,104 @@
+[
+  {
+    "id": "c001",
+    "sceneId": "s01",
+    "description": "正式报告结论写明“研究终止；不良事件：非设备相关”。",
+    "factIds": [
+      "f003"
+    ]
+  },
+  {
+    "id": "c002",
+    "sceneId": "s01",
+    "description": "未装订残页包含正式版本中未出现的设备异常描述。",
+    "factIds": []
+  },
+  {
+    "id": "c003",
+    "sceneId": "s01",
+    "description": "正式版本删去了部分设备异常描述，但尚未确认修改者。",
+    "factIds": [
+      "f006"
+    ]
+  },
+  {
+    "id": "c004",
+    "sceneId": "s01",
+    "description": "匿名知情者提供的目录指向17号项目原始记录。",
+    "factIds": []
+  },
+  {
+    "id": "c005",
+    "sceneId": "s01",
+    "description": "旧归档索引显示设备运行日志保存在二楼观察室终端。",
+    "factIds": []
+  },
+  {
+    "id": "c006",
+    "sceneId": "s03",
+    "description": "设备运行日志记录异常参数和系统警告。",
+    "factIds": [
+      "f004"
+    ]
+  },
+  {
+    "id": "c007",
+    "sceneId": "s03",
+    "description": "监测记录显示设备异常后白针出现严重异常反应，实验随后终止。",
+    "factIds": [
+      "f004"
+    ]
+  },
+  {
+    "id": "c008",
+    "sceneId": "s03",
+    "description": "事故后研究人员讨论过设备异常及报告表述。",
+    "factIds": []
+  },
+  {
+    "id": "c009",
+    "sceneId": "s03",
+    "description": "正式报告没有完整呈现原始记录中的异常信息。",
+    "factIds": []
+  },
+  {
+    "id": "c010",
+    "sceneId": "s05",
+    "description": "设备在事故前已有异常运行风险记录及进一步检查要求。",
+    "factIds": [
+      "f005"
+    ]
+  },
+  {
+    "id": "c011",
+    "sceneId": "s05",
+    "description": "研究团队曾讨论设备异常、检查与项目进度之间的冲突。",
+    "factIds": [
+      "f005"
+    ]
+  },
+  {
+    "id": "c012",
+    "sceneId": "s05",
+    "description": "修改记录中出现黑针工作账号。",
+    "factIds": [
+      "f007"
+    ]
+  },
+  {
+    "id": "c013",
+    "sceneId": "s05",
+    "description": "不同版本材料存在内容缺失，黑针保存版本并不完整。",
+    "factIds": [
+      "f008"
+    ]
+  },
+  {
+    "id": "c014",
+    "sceneId": "s05",
+    "description": "第二阶段研究计划在次日上午继续推进。",
+    "factIds": [
+      "f011"
+    ]
+  }
+]

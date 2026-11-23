@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "id": "reader-demo",
+  "title": "反锁的书房",
+  "entrySceneId": "scene-study",
+  "character": {
+    "id": "paperclip",
+    "name": "曲别针",
+    "initialTrust": 45,
+    "knownFactIds": []
+  }
+}

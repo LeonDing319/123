@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "id": "demo-story",
+  "title": "反锁的书房",
+  "entrySceneId": "scene-hallway",
+  "character": {
+    "id": "character-lin-cen",
+    "name": "林岑",
+    "initialTrust": 45,
+    "knownFactIds": ["fact-clock-chimes"]
+  }
+}

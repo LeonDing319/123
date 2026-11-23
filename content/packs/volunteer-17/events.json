@@ -1,0 +1,940 @@
+[
+  {
+    "id": "e001",
+    "sceneId": "s01",
+    "trigger": "autonomous",
+    "description": "查看阶段性安全报告",
+    "requiresClueIds": [],
+    "revealsClueIds": [
+      "c001"
+    ],
+    "follows": [],
+    "result": "报告纸张边缘有些卷曲，装订处留着拆换过的痕迹。曲别针翻到最后一页，看到那句“非设备相关”。他把报告拍下来，放进文件袋。"
+  },
+  {
+    "id": "e002",
+    "sceneId": "s01",
+    "trigger": "danmaku-intervention",
+    "description": "柜子最下层压着几张没有重新装订的纸。页码和正式报告对不上，其中一处记录提到设备运行异常，但后续内容缺失。曲别针将纸张夹进文件袋。",
+    "requiresClueIds": [],
+    "revealsClueIds": [
+      "c002"
+    ],
+    "follows": [
+      "e001"
+    ]
+  },
+  {
+    "id": "e003",
+    "sceneId": "s01",
+    "trigger": "autonomous",
+    "description": "比对报告版本",
+    "requiresClueIds": [],
+    "revealsClueIds": [
+      "c003"
+    ],
+    "follows": [
+      "e002"
+    ],
+    "result": "两份文件的格式几乎一样，关键段落却并不相同。正式版本删去了几处设备异常描述。曲别针还不能确认是谁修改的，但至少知道官方结论并非完整记录。"
+  },
+  {
+    "id": "e004",
+    "sceneId": "s01",
+    "trigger": "danmaku-intervention",
+    "description": "手机里只有一份简短目录和几张模糊的文件截图。匿名知情者没有留下姓名，只提醒他去找17号项目的原始记录。曲别针无法确认对方身份，也不知道对方为什么愿意帮他。",
+    "requiresClueIds": [],
+    "revealsClueIds": [
+      "c004"
+    ],
+    "follows": [
+      "e001"
+    ]
+  },
+  {
+    "id": "e005",
+    "sceneId": "s01",
+    "trigger": "autonomous",
+    "description": "查看匿名短信",
+    "requiresClueIds": [],
+    "revealsClueIds": [],
+    "follows": [
+      "e003",
+      "e004",
+      "e007"
+    ],
+    "result": "“不要相信黑针。他今晚会把所有东西带走。”曲别针反复读了两遍，把号码和发送时间保存下来。短信没有解释黑针是谁，也没有说明资料究竟是什么。"
+  },
+  {
+    "id": "e006",
+    "sceneId": "s01",
+    "trigger": "autonomous",
+    "description": "查找设备日志位置",
+    "requiresClueIds": [],
+    "revealsClueIds": [
+      "c005"
+    ],
+    "follows": [
+      "e003",
+      "e004",
+      "e005",
+      "e007"
+    ],
+    "result": "档案目录中有一条旧归档索引，显示设备运行日志保存在二楼观察室终端。曲别针记下位置，将目录页拍照保存。"
+  },
+  {
+    "id": "e007",
+    "sceneId": "s01",
+    "trigger": "danmaku-intervention",
+    "description": "他贴近门边听了一会儿。外面没有清晰的脚步声，只有远处设备运转的低响。曲别针不确定刚才的声音来自哪里，但不再愿意长时间停留。",
+    "requiresClueIds": [],
+    "revealsClueIds": [],
+    "follows": [
+      "e001"
+    ]
+  },
+  {
+    "id": "e008",
+    "sceneId": "s01",
+    "trigger": "autonomous",
+    "description": "离开档案室",
+    "requiresClueIds": [],
+    "revealsClueIds": [],
+    "follows": [
+      "e006",
+      "e007",
+      "leave-now"
+    ],
+    "result": "曲别针把文件袋压在外套里面，轻轻拉开门。走廊的灯比档案室里亮一些，地面上有一道刚刚移动过的光。"
+  },
+  {
+    "id": "e009",
+    "sceneId": "s02",
+    "trigger": "danmaku-intervention",
+    "description": "曲别针推开公共办公室的门，侧身穿过办公桌之间的空隙。文件柜和隔断暂时挡住了走廊方向的视线，但玻璃门没有窗帘。他压低身体，听见外面的手电光扫过门框。",
+    "requiresClueIds": [],
+    "revealsClueIds": [],
+    "follows": []
+  },
+  {
+    "id": "e010",
+    "sceneId": "s02",
+    "trigger": "autonomous",
+    "description": "躲到文件柜后",
+    "requiresClueIds": [],
+    "revealsClueIds": [],
+    "follows": [
+      "e009"
+    ],
+    "result": "他把文件袋按在胸前，蹲到文件柜与墙面之间。外面的脚步声停了一下，又慢慢移开。曲别针不敢确定黑针是否已经离开，只能等一个短暂的空隙。"
+  },
+  {
+    "id": "e011",
+    "sceneId": "s02",
+    "trigger": "danmaku-intervention",
+    "description": "楼梯间的门没有完全关上。曲别针推门进去，脚步声在楼梯井里放大。他知道这条路能更快抵达二楼，但也可能让黑针轻易判断出他的方向。",
+    "requiresClueIds": [],
+    "revealsClueIds": [],
+    "follows": []
+  },
+  {
+    "id": "e012",
+    "sceneId": "s02",
+    "trigger": "danmaku-intervention",
+    "description": "储物间很窄，货架之间只留下一条勉强侧身通过的空隙。曲别针挤进去，把文件袋压在衣服下面。门外的光停在地面上，随后缓慢移开。",
+    "requiresClueIds": [],
+    "revealsClueIds": [],
+    "follows": []
+  },
+  {
+    "id": "e013",
+    "sceneId": "s02",
+    "trigger": "autonomous",
+    "description": "观察黑针位置",
+    "requiresClueIds": [],
+    "revealsClueIds": [],
+    "follows": [
+      "e009",
+      "e010",
+      "e012"
+    ],
+    "result": "曲别针从门缝里看见黑针停在走廊中段。对方抬起手电，光束转向办公室入口。那支手电看起来很重，黑针每次转身都需要调整握持姿势。"
+  },
+  {
+    "id": "e014",
+    "sceneId": "s02",
+    "trigger": "autonomous",
+    "description": "等待搜索结束",
+    "requiresClueIds": [],
+    "revealsClueIds": [],
+    "follows": [
+      "e010",
+      "e012",
+      "e013"
+    ],
+    "result": "他没有立即行动。外面传来门把手被碰动的声音，接着是几声沉重的脚步。曲别针等到声音逐渐远去，才重新靠近门边。"
+  },
+  {
+    "id": "e015",
+    "sceneId": "s02",
+    "trigger": "autonomous",
+    "description": "检查文件袋",
+    "requiresClueIds": [],
+    "revealsClueIds": [],
+    "follows": [
+      "e010",
+      "e012",
+      "e013",
+      "e014"
+    ],
+    "result": "文件袋边缘被挤皱了，里面的纸张还在。曲别针快速确认了已取得的材料，没有在这里继续阅读。"
+  },
+  {
+    "id": "e016",
+    "sceneId": "s02",
+    "trigger": "autonomous",
+    "description": "直接穿越走廊",
+    "requiresClueIds": [],
+    "revealsClueIds": [],
+    "follows": [
+      "e009",
+      "e010",
+      "e012",
+      "e013",
+      "e014",
+      "e015"
+    ],
+    "result": "曲别针从遮挡后冲出来，沿着走廊向楼梯口跑去。手电光几乎立刻追了过来。他没有回头，只听见身后金属筒身碰到墙角的声音。"
+  },
+  {
+    "id": "e017",
+    "sceneId": "s02",
+    "trigger": "autonomous",
+    "description": "关闭手机提示",
+    "requiresClueIds": [],
+    "revealsClueIds": [],
+    "follows": [
+      "e009",
+      "e010",
+      "e011",
+      "e012",
+      "e013",
+      "e014",
+      "e015"
+    ],
+    "result": "他按下手机侧键，将提示音和震动关闭。屏幕短暂亮起，又被他迅速按灭。"
+  },
+  {
+    "id": "e018",
+    "sceneId": "s02",
+    "trigger": "autonomous",
+    "description": "检查楼梯间出口",
+    "requiresClueIds": [],
+    "revealsClueIds": [],
+    "follows": [
+      "e011",
+      "e016",
+      "e017"
+    ],
+    "result": "楼梯间通往二楼的门可以打开。曲别针停了一瞬，确认门后没有人影，才推门出去。"
+  },
+  {
+    "id": "e019",
+    "sceneId": "s02",
+    "trigger": "autonomous",
+    "description": "继续向二楼移动",
+    "requiresClueIds": [],
+    "revealsClueIds": [],
+    "follows": [
+      "e011",
+      "e016",
+      "e017",
+      "e018"
+    ],
+    "result": "他没有停下来。楼梯转角处的灯闪了一下，文件袋在外套里撞到肋骨，提醒他必须尽快离开一楼。"
+  },
+  {
+    "id": "e020",
+    "sceneId": "s02",
+    "trigger": "autonomous",
+    "description": "进入二楼实验区",
+    "requiresClueIds": [],
+    "revealsClueIds": [],
+    "follows": [
+      "e019"
+    ],
+    "result": "曲别针推开二楼走廊的门，身后的脚步声暂时被楼梯门隔开。他还没有摆脱黑针，但至少暂时离开了对方的直接视线。"
+  },
+  {
+    "id": "e021",
+    "sceneId": "s03",
+    "trigger": "autonomous",
+    "description": "检查观察室终端",
+    "requiresClueIds": [],
+    "revealsClueIds": [],
+    "follows": [],
+    "result": "终端显示17号项目归档目录。曲别针找到事故当天的设备运行日志、监测记录和内部沟通文件入口。",
+    "resultFactIds": [
+      "f002"
+    ]
+  },
+  {
+    "id": "e022",
+    "sceneId": "s03",
+    "trigger": "autonomous",
+    "description": "调取设备运行日志",
+    "requiresClueIds": [],
+    "revealsClueIds": [
+      "c006"
+    ],
+    "follows": [
+      "e021"
+    ],
+    "result": "日志中记录了设备运行参数异常和系统警告。曲别针将相关页面保存下来。"
+  },
+  {
+    "id": "e023",
+    "sceneId": "s03",
+    "trigger": "autonomous",
+    "description": "查看监测记录",
+    "requiresClueIds": [],
+    "revealsClueIds": [
+      "c007"
+    ],
+    "follows": [
+      "e022"
+    ],
+    "result": "监测记录显示，设备异常之后白针出现严重异常反应，实验随后终止。曲别针把这段记录与设备日志放在一起，确认两者时间存在对应关系。"
+  },
+  {
+    "id": "e024",
+    "sceneId": "s03",
+    "trigger": "danmaku-intervention",
+    "description": "内部记录中有人讨论事故报告应当如何表述，也有人提到部分设备异常信息不宜直接放入对外说明。当前摘录不完整，尚不能确定所有参与者的具体责任。",
+    "requiresClueIds": [],
+    "revealsClueIds": [
+      "c008"
+    ],
+    "follows": [
+      "e023"
+    ]
+  },
+  {
+    "id": "e025",
+    "sceneId": "s03",
+    "trigger": "danmaku-intervention",
+    "description": "正式报告没有完整呈现原始记录中的异常信息。曲别针确认报告存在内容缺失，但还没有找到具体修改者的完整记录。",
+    "requiresClueIds": [],
+    "revealsClueIds": [
+      "c009"
+    ],
+    "follows": [
+      "e023"
+    ]
+  },
+  {
+    "id": "e026",
+    "sceneId": "s03",
+    "trigger": "autonomous",
+    "description": "保存原始资料",
+    "requiresClueIds": [],
+    "revealsClueIds": [],
+    "follows": [
+      "e025",
+      "compare-after-memo"
+    ],
+    "result": "曲别针将当前已取得的文件复制到存储设备，并确认文件是否保存成功。\n\n门外传来脚步声。\n\n曲别针迅速关闭屏幕，退到实验隔断后。手电光从门缝扫进来，停在地面上，又慢慢移向桌脚。\n\n“我知道你在里面。”黑针隔着门说，“你以为手里的东西能证明全部事情吗？”\n\n曲别针没有回答。\n\n黑针停了一会儿，又说：“明天还有新的参与者。”\n\n“你现在才想起来？”曲别针压低声音。\n\n“我知道我做错了。但你手里的材料不是完整的。”"
+  },
+  {
+    "id": "e027",
+    "sceneId": "s03",
+    "trigger": "danmaku-intervention",
+    "description": "他退出项目目录，将屏幕恢复到普通待机页面。观察室里重新暗下来，只剩下设备指示灯。",
+    "requiresClueIds": [],
+    "revealsClueIds": [],
+    "follows": [
+      "e026"
+    ]
+  },
+  {
+    "id": "e028",
+    "sceneId": "s03",
+    "trigger": "danmaku-intervention",
+    "description": "门外的脚步声停在门边。曲别针从隔断边缘看过去，只能看见手电光束的一部分。他无法确认黑针是否已经看见自己。",
+    "requiresClueIds": [],
+    "revealsClueIds": [],
+    "follows": [
+      "e026"
+    ]
+  },
+  {
+    "id": "e029",
+    "sceneId": "s03",
+    "trigger": "autonomous",
+    "description": "离开观察室",
+    "requiresClueIds": [],
+    "revealsClueIds": [],
+    "follows": [
+      "e027",
+      "e028"
+    ],
+    "result": "曲别针收起存储设备，从当前可用的出口离开观察室。门外的光已经移向走廊另一侧，但他知道黑针仍然在附近。"
+  },
+  {
+    "id": "e030",
+    "sceneId": "s04",
+    "trigger": "autonomous",
+    "description": "与黑针对峙",
+    "requiresClueIds": [],
+    "revealsClueIds": [],
+    "follows": [],
+    "result": "黑针挡住走廊去路，要求曲别针交出材料。双方短暂对话，尚未发生身体接触。"
+  },
+  {
+    "id": "e031",
+    "sceneId": "s04",
+    "trigger": "danmaku-intervention",
+    "description": "曲别针问黑针是否参与修改事故报告。黑针承认自己签过修改后的报告，但强调自己不是设备事故的直接制造者。",
+    "requiresClueIds": [],
+    "revealsClueIds": [],
+    "follows": [
+      "e030"
+    ],
+    "resultFactIds": [
+      "f007"
+    ]
+  },
+  {
+    "id": "e032",
+    "sceneId": "s04",
+    "trigger": "danmaku-intervention",
+    "description": "曲别针注意到黑针手里的应急手电体积很大，筒身粗重，灯头宽大。黑针转身时需要重新调整握持位置。",
+    "requiresClueIds": [],
+    "revealsClueIds": [],
+    "follows": [
+      "e030"
+    ]
+  },
+  {
+    "id": "e033",
+    "sceneId": "s04",
+    "trigger": "autonomous",
+    "description": "试图谈判",
+    "requiresClueIds": [],
+    "revealsClueIds": [],
+    "follows": [
+      "e031",
+      "e032"
+    ],
+    "result": "曲别针要求黑针说明报告为什么删去了设备异常记录。黑针没有完整回答，只强调曲别针手里的材料不足以证明全部责任。"
+  },
+  {
+    "id": "e034",
+    "sceneId": "s04",
+    "trigger": "autonomous",
+    "description": "后退拉开距离",
+    "requiresClueIds": [],
+    "revealsClueIds": [],
+    "follows": [
+      "e033"
+    ],
+    "result": "曲别针向后退，试图让自己与黑针保持距离。文件袋仍在手中，但折叠刀已经暴露。"
+  },
+  {
+    "id": "e035",
+    "sceneId": "s04",
+    "trigger": "autonomous",
+    "description": "躲入实验室门外区域",
+    "requiresClueIds": [],
+    "revealsClueIds": [],
+    "follows": [
+      "e034"
+    ],
+    "result": "曲别针退到实验室入口附近，借门框和设备遮挡黑针的视线。手电光束扫过墙面，没有立刻照到他身上。"
+  },
+  {
+    "id": "e036",
+    "sceneId": "s04",
+    "trigger": "autonomous",
+    "description": "进入设备间",
+    "requiresClueIds": [],
+    "revealsClueIds": [],
+    "follows": [
+      "e034",
+      "e035"
+    ],
+    "result": "曲别针侧身进入狭窄设备间。里面堆放着旧设备和包装箱，空间不足以让他快速转身。他把文件袋护在胸前，听见黑针在外面停留。"
+  },
+  {
+    "id": "e037",
+    "sceneId": "s04",
+    "trigger": "autonomous",
+    "description": "从设备间撤离",
+    "requiresClueIds": [],
+    "revealsClueIds": [],
+    "follows": [
+      "e036"
+    ],
+    "result": "曲别针确认门外暂时没有直接脚步声后离开设备间。他没有继续停留，沿着走廊寻找安全通道入口。"
+  },
+  {
+    "id": "e038",
+    "sceneId": "s04",
+    "trigger": "autonomous",
+    "description": "冲向安全通道",
+    "requiresClueIds": [],
+    "revealsClueIds": [],
+    "follows": [
+      "e034",
+      "e035",
+      "e037"
+    ],
+    "result": "曲别针趁黑针调整手电方向时向安全通道移动。沉重的金属碰撞声从身后传来，他没有回头。"
+  },
+  {
+    "id": "e039",
+    "sceneId": "s04",
+    "trigger": "autonomous",
+    "description": "亮出折叠刀",
+    "requiresClueIds": [],
+    "revealsClueIds": [],
+    "follows": [
+      "e030",
+      "e031",
+      "e032",
+      "e033",
+      "e038"
+    ],
+    "result": "曲别针没有回答。他抽出折叠刀，走廊里的距离一下子变得很短。"
+  },
+  {
+    "id": "e040",
+    "sceneId": "s04",
+    "trigger": "danmaku-intervention",
+    "description": "曲别针主动向黑针发起攻击。\n\n两个人短暂扭打。黑针用沉重的手电挡住曲别针的动作，文件袋掉到地上，纸张散开。曲别针捡起离自己最近的几页，趁黑针调整手电握持姿势时退向安全通道。",
+    "requiresClueIds": [],
+    "revealsClueIds": [],
+    "follows": [
+      "e039"
+    ]
+  },
+  {
+    "id": "e041",
+    "sceneId": "s04",
+    "trigger": "danmaku-intervention",
+    "description": "曲别针停止攻击意图，后退寻找撤离机会。他仍然愤怒，但开始意识到继续冲突可能让资料和自己都陷入更大危险。",
+    "requiresClueIds": [],
+    "revealsClueIds": [],
+    "follows": [
+      "e039"
+    ]
+  },
+  {
+    "id": "e042",
+    "sceneId": "s04",
+    "trigger": "autonomous",
+    "description": "进入安全通道",
+    "requiresClueIds": [],
+    "revealsClueIds": [],
+    "follows": [
+      "e040",
+      "e041"
+    ],
+    "result": "曲别针进入安全通道，向地下设备室移动。走廊里的声音逐渐被厚重的防火门隔开。"
+  },
+  {
+    "id": "e043",
+    "sceneId": "s05",
+    "trigger": "autonomous",
+    "description": "检查旧项目档案柜",
+    "requiresClueIds": [],
+    "revealsClueIds": [],
+    "follows": [],
+    "result": "曲别针打开旧档案柜，找到17号项目备份文件袋。文件袋中有几份没有进入正式归档目录的材料。"
+  },
+  {
+    "id": "e044",
+    "sceneId": "s05",
+    "trigger": "autonomous",
+    "description": "查看设备风险评估",
+    "requiresClueIds": [],
+    "revealsClueIds": [
+      "c010"
+    ],
+    "follows": [
+      "e043"
+    ],
+    "result": "风险评估记录了设备此前出现的异常运行情况，并提出进一步检查要求。曲别针意识到，至少在事故发生前，研究团队已经掌握过风险信号。"
+  },
+  {
+    "id": "e045",
+    "sceneId": "s05",
+    "trigger": "autonomous",
+    "description": "查看内部沟通邮件",
+    "requiresClueIds": [],
+    "revealsClueIds": [
+      "c011"
+    ],
+    "follows": [
+      "e044"
+    ],
+    "result": "邮件显示，研究团队曾讨论设备异常、后续测试安排和项目进度之间的冲突。邮件不能单独证明每个人都掌握了全部风险，但说明相关问题并非完全无人讨论。"
+  },
+  {
+    "id": "e046",
+    "sceneId": "s05",
+    "trigger": "autonomous",
+    "description": "查看报告修改记录",
+    "requiresClueIds": [],
+    "revealsClueIds": [
+      "c012"
+    ],
+    "follows": [
+      "e045"
+    ],
+    "result": "修改记录中出现黑针的工作账号。曲别针确认黑针参与过17号事故报告的修改。"
+  },
+  {
+    "id": "e047",
+    "sceneId": "s05",
+    "trigger": "autonomous",
+    "description": "比对材料版本",
+    "requiresClueIds": [],
+    "revealsClueIds": [
+      "c013"
+    ],
+    "follows": [
+      "e046"
+    ],
+    "result": "原始材料和后续保存版本之间存在缺失内容。曲别针将缺失部分与事故后内部沟通记录进行比对，发现黑针保存的版本并不完整。"
+  },
+  {
+    "id": "e048",
+    "sceneId": "s05",
+    "trigger": "autonomous",
+    "description": "保存完整材料",
+    "requiresClueIds": [],
+    "revealsClueIds": [],
+    "follows": [
+      "e054",
+      "e055"
+    ],
+    "result": "曲别针将已经核对的文件复制或拍照保存，并检查文件袋中的纸质材料。"
+  },
+  {
+    "id": "e049",
+    "sceneId": "s05",
+    "trigger": "autonomous",
+    "description": "检查设备室出口",
+    "requiresClueIds": [],
+    "revealsClueIds": [],
+    "follows": [
+      "e048",
+      "e053"
+    ],
+    "result": "他听见门外传来脚步声，便停下手里的动作。脚步声越来越近，最后停在设备室入口附近。"
+  },
+  {
+    "id": "e050",
+    "sceneId": "s05",
+    "trigger": "autonomous",
+    "description": "与黑针交涉",
+    "requiresClueIds": [],
+    "revealsClueIds": [],
+    "follows": [
+      "e047"
+    ],
+    "result": "黑针进入设备室，要求曲别针交出材料。曲别针没有立即答应，双方开始谈判。"
+  },
+  {
+    "id": "e051",
+    "sceneId": "s05",
+    "trigger": "autonomous",
+    "description": "质问黑针的责任",
+    "requiresClueIds": [],
+    "revealsClueIds": [],
+    "follows": [
+      "e050"
+    ],
+    "result": "曲别针问黑针为什么参与修改报告。黑针承认自己参与了文件修改，也承认删去过部分内部沟通记录，但仍然试图强调自己只是执行工作安排。",
+    "resultFactIds": [
+      "f007"
+    ]
+  },
+  {
+    "id": "e052",
+    "sceneId": "s05",
+    "trigger": "autonomous",
+    "description": "询问下一阶段研究",
+    "requiresClueIds": [],
+    "revealsClueIds": [
+      "c014"
+    ],
+    "follows": [
+      "e050",
+      "e051"
+    ],
+    "result": "曲别针追问后续研究安排。黑针表示第二阶段研究计划在次日上午继续推进，并称自己希望阻止新的伤害。"
+  },
+  {
+    "id": "e053",
+    "sceneId": "s05",
+    "trigger": "danmaku-intervention",
+    "description": "曲别针答应了黑针提出的交易，把文件袋暂时留在手里。",
+    "requiresClueIds": [],
+    "revealsClueIds": [],
+    "follows": [
+      "e052"
+    ]
+  },
+  {
+    "id": "e054",
+    "sceneId": "s05",
+    "trigger": "danmaku-intervention",
+    "description": "曲别针拒绝将材料交给黑针。黑针的态度变得强硬，双方失去继续谈判的基础。",
+    "requiresClueIds": [],
+    "revealsClueIds": [],
+    "follows": [
+      "e052"
+    ]
+  },
+  {
+    "id": "e055",
+    "sceneId": "s05",
+    "trigger": "danmaku-intervention",
+    "description": "曲别针检查黑针提供的补充文件，核对其来源、版本和内容。",
+    "requiresClueIds": [],
+    "revealsClueIds": [],
+    "follows": [
+      "e052"
+    ]
+  },
+  {
+    "id": "e056",
+    "sceneId": "s05",
+    "trigger": "autonomous",
+    "description": "进入地下走廊",
+    "requiresClueIds": [],
+    "revealsClueIds": [],
+    "follows": [
+      "e049"
+    ],
+    "result": "曲别针收起当前保留的材料，离开设备室，沿地下走廊向一楼大厅移动。"
+  },
+  {
+    "id": "e057",
+    "sceneId": "s06",
+    "trigger": "autonomous",
+    "description": "观察值班室",
+    "requiresClueIds": [],
+    "revealsClueIds": [],
+    "follows": [],
+    "result": "曲别针看见值班室里有人。对方正在处理夜间值守工作，并不知道17号事故，也不了解黑针和曲别针之间的纠纷。",
+    "resultFactIds": [
+      "f012"
+    ]
+  },
+  {
+    "id": "e058",
+    "sceneId": "s06",
+    "trigger": "danmaku-intervention",
+    "description": "曲别针向值班人员说明自己正遭到追踪，请求对方介入。值班人员起身要求双方停止冲突，但无法立即判断谁承担事故责任。",
+    "requiresClueIds": [],
+    "revealsClueIds": [],
+    "follows": [
+      "e057"
+    ]
+  },
+  {
+    "id": "e059",
+    "sceneId": "s06",
+    "trigger": "autonomous",
+    "description": "展示事故材料",
+    "requiresClueIds": [],
+    "revealsClueIds": [],
+    "follows": [
+      "e058",
+      "request-witness"
+    ],
+    "result": "曲别针向值班人员展示部分文件。值班人员只能确认这些文件与研究项目有关，不能当场鉴定真伪或认定责任。"
+  },
+  {
+    "id": "e060",
+    "sceneId": "s06",
+    "trigger": "autonomous",
+    "description": "请求联系警方",
+    "requiresClueIds": [],
+    "revealsClueIds": [],
+    "follows": [
+      "e058",
+      "e059"
+    ],
+    "result": "曲别针请求值班人员联系警方或有权处理的外部人员。"
+  },
+  {
+    "id": "e061",
+    "sceneId": "s06",
+    "trigger": "danmaku-intervention",
+    "description": "黑针追到大厅，要求曲别针交出材料。值班人员已经注意到双方冲突，现场不再是封闭的私下谈判。",
+    "requiresClueIds": [],
+    "revealsClueIds": [],
+    "follows": [
+      "e057"
+    ]
+  },
+  {
+    "id": "e062",
+    "sceneId": "s06",
+    "trigger": "autonomous",
+    "description": "质问黑针",
+    "requiresClueIds": [],
+    "revealsClueIds": [],
+    "follows": [
+      "e061"
+    ],
+    "result": "曲别针要求黑针当面承认自己参与的修改行为。"
+  },
+  {
+    "id": "e063",
+    "sceneId": "s06",
+    "trigger": "danmaku-intervention",
+    "description": "曲别针在最终对峙中主动攻击黑针。",
+    "requiresClueIds": [],
+    "revealsClueIds": [],
+    "follows": [
+      "e057"
+    ]
+  },
+  {
+    "id": "e064",
+    "sceneId": "s06",
+    "trigger": "autonomous",
+    "description": "放下武器",
+    "requiresClueIds": [],
+    "revealsClueIds": [],
+    "follows": [
+      "e060",
+      "e062"
+    ],
+    "result": "曲别针放下折叠刀或停止攻击姿态。冲突暂时停止，值班人员有机会进一步介入。",
+    "requiresEventIds": [
+      "e060"
+    ]
+  },
+  {
+    "id": "e065",
+    "sceneId": "s06",
+    "trigger": "autonomous",
+    "description": "交出完整材料",
+    "requiresClueIds": [
+      "c006",
+      "c007",
+      "c012",
+      "c009"
+    ],
+    "revealsClueIds": [],
+    "follows": [
+      "e064"
+    ],
+    "result": "曲别针在值班人员的见证下，将完整材料交接并留下记录。",
+    "requiresEventIds": [
+      "e060"
+    ]
+  },
+  {
+    "id": "e066",
+    "sceneId": "s06",
+    "trigger": "danmaku-intervention",
+    "description": "曲别针将约定材料交给黑针。",
+    "requiresClueIds": [],
+    "revealsClueIds": [],
+    "follows": [
+      "e057"
+    ],
+    "excludesEventIds": [
+      "e048"
+    ],
+    "requiresEventIds": [
+      "e053"
+    ]
+  },
+  {
+    "id": "e067",
+    "sceneId": "s06",
+    "trigger": "autonomous",
+    "description": "带着材料离开",
+    "requiresClueIds": [],
+    "revealsClueIds": [],
+    "follows": [
+      "e065"
+    ],
+    "result": "曲别针带着当前持有的材料离开研究中心。"
+  },
+  {
+    "id": "e068",
+    "sceneId": "s06",
+    "trigger": "autonomous",
+    "description": "黑针死亡结果",
+    "requiresClueIds": [],
+    "revealsClueIds": [],
+    "follows": [
+      "e063"
+    ],
+    "result": "黑针倒在大厅地面上，再也没有起来。",
+    "requiresEventIds": [
+      "e040"
+    ]
+  },
+  {
+    "id": "e069",
+    "sceneId": "s06",
+    "trigger": "autonomous",
+    "description": "黑针受伤存活结果",
+    "requiresClueIds": [],
+    "revealsClueIds": [],
+    "follows": [
+      "e063"
+    ],
+    "result": "黑针受了伤，仍然活着。",
+    "excludesEventIds": [
+      "e040"
+    ]
+  },
+  {
+    "id": "leave-now",
+    "sceneId": "s01",
+    "trigger": "danmaku-intervention",
+    "description": "我决定离开档案室。",
+    "requiresClueIds": [],
+    "revealsClueIds": [],
+    "follows": [
+      "e001"
+    ]
+  },
+  {
+    "id": "request-witness",
+    "sceneId": "s06",
+    "trigger": "autonomous",
+    "description": "向值班人员求助",
+    "requiresClueIds": [],
+    "revealsClueIds": [],
+    "follows": [
+      "e062"
+    ],
+    "result": "曲别针向值班人员说明自己正遭到追踪，请求对方介入。值班人员起身要求双方停止冲突，但无法立即判断谁承担事故责任。"
+  },
+  {
+    "id": "compare-after-memo",
+    "sceneId": "s03",
+    "trigger": "autonomous",
+    "description": "比对正式报告",
+    "requiresClueIds": [],
+    "revealsClueIds": [
+      "c009"
+    ],
+    "follows": [
+      "e024"
+    ],
+    "result": "正式报告没有完整呈现原始记录中的异常信息。曲别针确认报告存在内容缺失，但还没有找到具体修改者的完整记录。"
+  }
+]

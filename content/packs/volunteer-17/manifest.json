@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "id": "volunteer-17",
+  "title": "志愿者编号17",
+  "entrySceneId": "s01",
+  "character": {
+    "id": "paperclip",
+    "name": "曲别针",
+    "initialTrust": 45,
+    "knownFactIds": [
+      "f001",
+      "f002",
+      "f003"
+    ]
+  }
+}

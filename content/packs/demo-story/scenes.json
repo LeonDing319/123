@@ -1,0 +1,20 @@
+[
+  {
+    "id": "scene-hallway",
+    "title": "走廊",
+    "opening": "林岑抬手敲门。走廊尽头的老钟刚响过九下，书房里却没人应声。她压了压门把手，听见锁舌抵住门框。门缝下有一线灯光，地毯上落着半截蓝线。",
+    "transitions": [{ "toSceneId": "scene-archive", "requiresClueIds": ["clue-blue-thread"] }]
+  },
+  {
+    "id": "scene-archive",
+    "title": "档案间",
+    "opening": "移交箱沿墙排开。林岑找到一摞修缮记录，最上面的图纸折得只露出一半标记。",
+    "transitions": [{ "toSceneId": "scene-study", "requiresClueIds": ["clue-service-plan"] }]
+  },
+  {
+    "id": "scene-study",
+    "title": "书房",
+    "opening": "林岑循标牌走进书房。桌灯还亮着，台历压在一本摊开的薄册上。",
+    "transitions": []
+  }
+]

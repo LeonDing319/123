@@ -1,0 +1,20 @@
+[
+  {
+    "id": "ending-documented",
+    "priority": 20,
+    "sceneId": "scene-study",
+    "title": "有据可查",
+    "requiresClueIds": ["clue-maintenance-log"],
+    "excludesClueIds": [],
+    "narrativeGoal": "让林岑依据维修记录交代门锁故障与登记时间，保留证据之外的疑问。"
+  },
+  {
+    "id": "ending-unresolved",
+    "priority": 10,
+    "sceneId": "scene-study",
+    "title": "留待复查",
+    "requiresClueIds": [],
+    "excludesClueIds": ["clue-maintenance-log"],
+    "narrativeGoal": "让林岑记录她是如何进入书房的，并说明暂时无法确认正门打不开的原因。"
+  }
+]

@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="zh-CN">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>反锁的书房 · CRT 界面小样</title>
+<style>
+  :root {
+    color-scheme: dark;
+    --shell: #484a34;
+    --phosphor: #d2e6a8;
+    --paper-ink: #3f3c2b;
+    --mono: Consolas, "Microsoft YaHei", monospace;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    color: #ebdfbc;
+    background:
+      radial-gradient(ellipse at 38% 1%, #363b27 0, transparent 48%),
+      repeating-linear-gradient(90deg, #ffffff06 0 1px, transparent 1px 106px),
+      #181b14;
+    font: 16px/1.6 "Microsoft YaHei", sans-serif;
+  }
+  button, input { font: inherit; }
+  button { cursor: pointer; }
+  button:focus-visible, summary:focus-visible { outline: 2px solid #d4dc9f; outline-offset: 4px; }
+  main { width: min(1280px, 100% - 64px); margin: auto; padding-block: 27px 32px; }
+  .heading { display: flex; justify-content: flex-end; margin-bottom: 12px; }
+  .connection { color: #cad6a1; font: 13px/1.4 var(--mono); white-space: nowrap; }
+  .connection i, .diode { display: inline-block; width: 7px; height: 7px; margin-right: 8px; background: #b1d86b; box-shadow: 0 0 10px #a8d65c90; }
+  .workbench { display: grid; grid-template-columns: minmax(0, 57fr) minmax(0, 43fr); gap: 25px; position: relative; }
+  .workbench::before {
+    content: ""; position: absolute; inset: 50% -15px -16px; z-index: -1;
+    background: repeating-linear-gradient(0deg,#313027 0 2px,#292a21 2px 5px);
+    border-block: 5px solid #403c2a; box-shadow: 0 12px 20px #080a06a0;
+  }
+  .left { display: grid; gap: 16px; min-width: 0; }
+  .device {
+    min-width: 0; position: relative;
+    padding: 14px 18px 11px;
+    background: linear-gradient(125deg, #62614a, var(--shell) 43%, #313422 84%);
+    border: 1px solid #8e8966; border-right-color: #373a26; border-bottom-color: #292d20;
+    border-radius: 12px 12px 8px 8px;
+    box-shadow: inset 1px 2px #a5a17e40, inset -3px -3px #131a1250, 0 7px #10140d, 0 15px 20px #080a06b0;
+  }
+  .device::before, .device::after {
+    content: ""; position: absolute; width: 7px; height: 7px; top: 11px; border-radius: 50%;
+    background: linear-gradient(145deg, #a09974 0 40%, #312f20 42% 56%, #625e45 58%);
+    box-shadow: 0 1px #202619; pointer-events: none;
+  }
+  .device::before { left: 8px; }.device::after { right: 8px; }
+  .device-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 0 3px 9px; }
+  .device-head h2 { margin: 0; font-size: 15px; font-weight: 600; letter-spacing: .16em; }
+  .badge { color: #d4d1af; font: 12px/1.4 var(--mono); letter-spacing: .15em; }
+  .screen {
+    position: relative; overflow: hidden; isolation: isolate;
+    border: 3px solid #161d13; border-radius: 13px;
+    background: radial-gradient(ellipse at 42% 37%, #344a23, #162718 91%);
+    box-shadow: 0 1px 1px #c2be803d, inset 0 0 0 2px #81a04c77;
+  }
+  .screen::after {
+    content: ""; position: absolute; inset: 0; z-index: 2; pointer-events: none;
+    background: repeating-linear-gradient(0deg, #080e091e 0 1px, transparent 1px 4px),
+      radial-gradient(ellipse at center, transparent 48%, #0a160e66 100%);
+  }
+  .camera img { width: 100%; height: clamp(210px, 39vh, 350px); display: block; object-fit: contain; image-rendering: pixelated; }
+  .camera { background: #182017; }
+  .camera-signal { position: absolute; z-index: 1; inset: 12px 12px auto; display: flex; justify-content: space-between; gap: 10px; color: #e3ebba; font: 13px/1.4 var(--mono); }
+  .camera-signal span { padding: 4px 7px; background: #152215df; border: 1px solid #88926470; }
+  .device-foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-top: 10px; }
+  .vents { width: 86px; height: 8px; background: repeating-linear-gradient(90deg,#181f15 0 3px, transparent 3px 8px); }
+  .ledger {
+    color: var(--paper-ink); position: relative; margin-inline: 9px 6px; padding: 14px 22px 13px;
+    background: repeating-linear-gradient(0deg, transparent 0 24px, #79684625 24px 25px),
+      linear-gradient(105deg, #e1cea8, #c6af82);
+    border: 1px solid #efdbb6; border-right-color: #9d8a64; border-bottom-color: #9d8a64;
+    box-shadow: 0 3px #51503b, 0 6px 16px #0c120ac9;
+  }
+  .ledger h2 { display: inline-block; margin: 0 0 6px; font: bold 17px/1.5 "Songti SC", SimSun, serif; letter-spacing: .14em; }
+  .ledger p { margin: 0; line-height: 25px; font-size: 15px; }
+  .ledger details { border-top: 1px solid #74624455; margin-top: 10px; padding-top: 6px; }
+  .ledger summary { width: fit-content; cursor: pointer; font-size: 14px; font-weight: 600; }
+  .ledger details p { margin-top: 4px; }
+  .tape { position: absolute; width: 68px; height: 19px; top: -7px; right: 24px; background: #e5cea4a3; transform: rotate(5deg); clip-path: polygon(3% 0,100% 4%,96% 100%,0 92%); }
+  .terminal { height: 100%; display: flex; flex-direction: column; }
+  .terminal .screen { min-height: 340px; flex: 1; display: grid; grid-template-rows: auto minmax(0,1fr) auto; color: var(--phosphor); padding: 14px 17px; }
+  .terminal-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; border-bottom: 1px solid #9fb37560; padding-bottom: 10px; }
+  .terminal-top strong { font-size: 14px; font-weight: 600; letter-spacing: .15em; }
+  .terminal-top button { color: var(--phosphor); border: 1px solid #a9be8075; background: #1c2c19; padding: 3px 9px; font-size: 13px; }
+  .messages { list-style: none; padding: 5px 4px 4px 0; margin: 0; min-height: 0; overflow-y: auto; scrollbar-color: #84995a #263522; }
+  .messages li { padding: 12px 0; border-bottom: 1px solid #b1c78330; }
+  .messages li:last-child { border-bottom: 0; }
+  .messages .meta { color: #adc18b; font: 13px/1.3 var(--mono); }
+  .messages .player { color: #ebcf96; }
+  .messages p { margin: 5px 0 0; }
+  .messages p::before { content: "›"; color: #98bf69; margin-right: 8px; }
+  .composer { display: grid; grid-template-columns: minmax(0,1fr) auto; gap: 7px; border-top: 1px solid #8fa06c6a; padding-top: 12px; }
+  .composer input, .composer button { border: 1px solid #718355; border-radius: 2px; background: #1a2818; color: #c7dba2; padding: 6px 10px; min-height: 38px; }
+  .composer input::placeholder { color: #a5b78c; }
+  .terminal .device-foot { margin-top: auto; }
+  .terminal .device-foot .badge { letter-spacing: .07em; }
+  .desk-caption { color: #a8ac94; font: 12px/1.4 var(--mono); margin: 31px 0 0; }
+  .desk-caption a { color: #cad6a1; margin-left: 10px; }
+  @media (max-width: 850px) {
+    main { width: calc(100% - 32px); padding-top: 20px; }
+    .workbench { gap: 14px; }
+    .device { padding-inline: 11px; }
+    .terminal .screen { padding: 9px 12px; }
+  }
+  @media (max-width: 660px) {
+    .workbench { grid-template-columns: 1fr; }
+    .heading { display: none; }
+    .terminal .screen { min-height: 380px; }
+  }
+</style>
+<main>
+  <header class="heading">
+    <div class="connection"><i></i>等待你的弹幕</div>
+  </header>
+  <div class="workbench">
+    <div class="left">
+      <section class="device" aria-labelledby="monitor-title">
+        <header class="device-head"><h2 id="monitor-title">书房监视画面</h2><span class="badge">CAM 01</span></header>
+        <div class="screen camera">
+          <img src="study-camera.png" alt="像素风书房。左侧是关着的旧门，右侧桌面上有一张便签。">
+          <div class="camera-signal"><span>场景示意</span></div>
+        </div>
+        <div class="device-foot"><span class="vents" aria-hidden="true"></span><span class="diode" aria-hidden="true"></span></div>
+      </section>
+      <article class="ledger" aria-labelledby="ledger-title">
+        <span class="tape" aria-hidden="true"></span>
+        <h2 id="ledger-title">现场记录</h2>
+        <p>我是曲别针。书房门打不开，桌面上只放着一张便签。我先去看看那把旧锁。</p>
+        <p>我压了一下把手。锁舌缩回一点，就卡住了。</p>
+        <details><summary>已发现线索 · 1</summary><p>门锁的锁舌卡住了。桌上有张便签，正面只写着「旧锁」。你觉得我该看哪里？</p></details>
+      </article>
+    </div>
+    <section class="device terminal" aria-labelledby="terminal-title">
+      <header class="device-head"><h2 id="terminal-title">弹幕终端</h2></header>
+      <div class="screen">
+        <div class="terminal-top"><strong>弹幕记录</strong><button type="button" id="pause" aria-pressed="false">暂停弹幕</button></div>
+        <ol class="messages" aria-label="样例弹幕">
+          <li><div class="meta player">21:08:12 / 你</div><p>便签也许有关。</p></li>
+          <li><div class="meta">21:08:12 / 曲别针 · AI 推测</div><p>便签上的「旧锁」可能和卡住的锁舌有关，我还要核实。</p></li>
+          <li><div class="meta player">21:08:26 / 你</div><p>看看。</p></li>
+          <li><div class="meta">21:08:26 / 曲别针 · 质疑</div><p>我该检查便签的哪一面？</p></li>
+        </ol>
+        <div class="composer"><input aria-label="弹幕输入样式" placeholder="给曲别针发一条弹幕" disabled><button type="button" disabled>发送</button></div>
+      </div>
+      <footer class="device-foot"><span class="badge"><i class="diode"></i><span id="status" role="status">显示中</span></span><span class="vents" aria-hidden="true"></span></footer>
+    </section>
+  </div>
+  <p class="desk-caption">视觉小样 · 弹幕为样例 <a href="http://localhost:3000/">打开正式 Reader 发送弹幕</a></p>
+</main>
+<script>
+  const pause = document.querySelector("#pause");
+  pause.addEventListener("click", () => {
+    const paused = pause.getAttribute("aria-pressed") !== "true";
+    pause.setAttribute("aria-pressed", paused);
+    pause.textContent = paused ? "恢复弹幕" : "暂停弹幕";
+    document.querySelector("#status").textContent = paused ? "显示已暂停" : "显示中";
+  });
+</script>
+</html>

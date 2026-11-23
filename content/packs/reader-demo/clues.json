@@ -1,0 +1,5 @@
+[
+  { "id": "clue-latch", "sceneId": "scene-study", "description": "门锁的锁舌卡住了。桌上有张便签，正面只写着「旧锁」。你觉得我该看哪里？", "factIds": ["fact-latch"] },
+  { "id": "clue-instructions", "sceneId": "scene-study", "description": "便签背面写着「抬起门把手，再向内拉」。", "factIds": ["fact-instructions"] },
+  { "id": "clue-door-open", "sceneId": "scene-study", "description": "锁舌退回，书房门已经打开。", "factIds": ["fact-door-open"] }
+]

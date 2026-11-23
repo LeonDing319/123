@@ -1,0 +1,14 @@
+@import "tailwindcss";
+
+html,
+body {
+  height: 100%;
+  overflow: clip;
+}
+
+body {
+  background: #101615;
+  color: #e6e9dc;
+  font: 16px/1.65 "Microsoft YaHei", system-ui, sans-serif;
+  color-scheme: dark;
+}

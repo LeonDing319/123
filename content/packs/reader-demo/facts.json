@@ -1,0 +1,5 @@
+[
+  { "id": "fact-latch", "description": "旧门锁的锁舌卡住了。" },
+  { "id": "fact-instructions", "description": "便签背面写着抬起门把手，再向内拉。" },
+  { "id": "fact-door-open", "description": "抬起把手并向内拉后，门开了。" }
+]

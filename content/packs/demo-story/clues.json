@@ -1,0 +1,20 @@
+[
+  {
+    "id": "clue-blue-thread",
+    "sceneId": "scene-hallway",
+    "description": "门边的蓝线与散在档案移交箱上的捆扎线一致。",
+    "factIds": ["fact-blue-ties"]
+  },
+  {
+    "id": "clue-service-plan",
+    "sceneId": "scene-archive",
+    "description": "图纸背面标着一条带检修标牌的通道。",
+    "factIds": ["fact-service-route"]
+  },
+  {
+    "id": "clue-maintenance-log",
+    "sceneId": "scene-study",
+    "description": "书桌上的维修簿记着当晚的锁舌故障与离场时间。",
+    "factIds": ["fact-latch-maintenance"]
+  }
+]

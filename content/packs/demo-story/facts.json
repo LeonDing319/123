@@ -1,0 +1,6 @@
+[
+  { "id": "fact-clock-chimes", "description": "走廊的老钟每到整点便按小时数报时。" },
+  { "id": "fact-blue-ties", "description": "近期修缮资料统一使用蓝棉线捆扎。" },
+  { "id": "fact-service-route", "description": "旧图纸标明档案间与书房之间有一条检修通道。" },
+  { "id": "fact-latch-maintenance", "description": "当晚的维修记录注明正门锁舌容易卡住，并登记了施工人员离开的时间。" }
+]

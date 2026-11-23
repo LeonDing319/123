@@ -1,0 +1,26 @@
+[
+  {
+    "id": "event-compare-thread",
+    "sceneId": "scene-hallway",
+    "trigger": "danmaku-intervention",
+    "description": "弹幕建议比对门边蓝线和移交箱的捆扎线。林岑接受建议并完成比对时，可以确认线索。",
+    "requiresClueIds": [],
+    "revealsClueIds": ["clue-blue-thread"]
+  },
+  {
+    "id": "event-check-plan",
+    "sceneId": "scene-archive",
+    "trigger": "danmaku-intervention",
+    "description": "弹幕提醒查看图纸背面。林岑采纳后可以查到检修通道的标记。",
+    "requiresClueIds": ["clue-blue-thread"],
+    "revealsClueIds": ["clue-service-plan"]
+  },
+  {
+    "id": "event-review-log",
+    "sceneId": "scene-study",
+    "trigger": "danmaku-intervention",
+    "description": "弹幕建议核对薄册里的维修时间。林岑采纳后可以确认当晚的记录。",
+    "requiresClueIds": ["clue-service-plan"],
+    "revealsClueIds": ["clue-maintenance-log"]
+  }
+]

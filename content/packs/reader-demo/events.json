@@ -1,0 +1,28 @@
+[
+  {
+    "id": "event-inspect-latch",
+    "sceneId": "scene-study",
+    "trigger": "autonomous",
+    "description": "检查旧门锁",
+    "result": "我压了一下把手。锁舌缩回一点，就卡住了。",
+    "requiresClueIds": [],
+    "revealsClueIds": ["clue-latch"]
+  },
+  {
+    "id": "event-turn-note",
+    "sceneId": "scene-study",
+    "trigger": "danmaku-intervention",
+    "description": "我按弹幕的建议翻过便签。",
+    "requiresClueIds": ["clue-latch"],
+    "revealsClueIds": ["clue-instructions"]
+  },
+  {
+    "id": "event-open-door",
+    "sceneId": "scene-study",
+    "trigger": "autonomous",
+    "description": "按便签上的步骤开门",
+    "result": "我抬起把手，再把门往里拉。门终于开了，我走回走廊。",
+    "requiresClueIds": ["clue-instructions"],
+    "revealsClueIds": ["clue-door-open"]
+  }
+]
